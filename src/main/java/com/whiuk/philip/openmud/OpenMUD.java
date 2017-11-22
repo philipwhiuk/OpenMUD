@@ -150,11 +150,17 @@ public class OpenMUD {
 		populateConnections(root);
 		populateCharacters(root);
 
-		currentLocation = locations.get("OPENSPACE");
+		currentLocation = locations.get(root.getChildText("startingLocation"));
 		currentItems = new HashMap<>();
-		currentItems.put("FLINT", new Item(items.get("FLINT")));
 		equipment = new HashMap<>();
-		equipment.put(Slot.MAIN_HAND, new Item(items.get("DAGGER")));
+		
+		for (Element itemXml : root.getChild("startingItems").getChildren("item")) {
+			currentItems.put(items.get(itemXml.getText()).shortName, new Item(items.get(itemXml.getText())));
+		}
+		
+		for (Element equipmentXml : root.getChild("startingEquipment").getChildren()) {
+			equipment.put(Slot.valueOf(equipmentXml.getName()), new Item(items.get(equipmentXml.getText())));
+		}
 	}
 	
 	private void populateCharacters(Element root) {

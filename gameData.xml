@@ -114,4 +114,11 @@
 		<connection direction="WEST" from="BEACH" to="OPENSPACE" />
 		<connection direction="EAST" from="MOUNTAIN" to="OPENSPACE" />
 	</connections>
+	<startingLocation>OPENSPACE</startingLocation>
+	<startingItems>
+		<item>FLINT</item>
+	</startingItems>
+	<startingEquipment>
+		<MAIN_HAND>DAGGER</MAIN_HAND>
+	</startingEquipment>
 </gameData>
