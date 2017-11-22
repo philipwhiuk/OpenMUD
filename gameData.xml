@@ -42,6 +42,12 @@
 			<description>Steel and flint - for starting fires</description>
 			<canTake>true</canTake>
 		</item>
+		<item>
+			<shortName>DAGGER</shortName>
+			<shortDescription>Bronze dagger</shortDescription>
+			<description>A bronze dagger - useful in a pinch.</description>
+			<canTake>true</canTake>
+		</item>
 	</items>
 	<locations>
 		<location id="OPENSPACE">

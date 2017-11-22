@@ -29,9 +29,12 @@ public class OpenMUD {
 	Map<String, Action> actions;
 	Map<String, Character> characters;
 	
+	boolean running = true;
+	
 	Location currentLocation;
 	Map<String, Item> currentItems;
 	Map<String, Skill> skills;
+	Map<Slot, Item> equipment;
 	Character playerCharacter;
 	Random random = new Random();
 	
@@ -105,6 +108,10 @@ public class OpenMUD {
 		NORTH, EAST, SOUTH, WEST;
 	}
 	
+	enum Slot {
+		HEAD, BODY, MAIN_HAND, OFF_HAND, LEGS;
+	}
+	
 	public OpenMUD(InputStream in, OutputStream out) throws Exception {
 		this.in = in;
 		this.out = out;
@@ -121,8 +128,10 @@ public class OpenMUD {
 		changeLocation(currentLocation);
 		do {
 			performTurn();			
-		} while(playerCharacter.alive);
-		printOutput("Game Over");
+		} while(playerCharacter.alive && running);
+		if (!playerCharacter.alive) {
+			printOutput("Game Over");
+		}
 	}
 
 	private void setupGame() throws JDOMException, IOException {
@@ -140,11 +149,12 @@ public class OpenMUD {
 		populateLocations(root);
 		populateConnections(root);
 		populateCharacters(root);
-		
-		
+
 		currentLocation = locations.get("OPENSPACE");
 		currentItems = new HashMap<>();
 		currentItems.put("FLINT", new Item(items.get("FLINT")));
+		equipment = new HashMap<>();
+		equipment.put(Slot.MAIN_HAND, new Item(items.get("DAGGER")));
 	}
 	
 	private void populateCharacters(Element root) {
@@ -252,7 +262,15 @@ public class OpenMUD {
 		//System
 		case "QUIT":
 			printOutput("Thanks for playing");
-			return;
+			running = false;
+			break;
+		//Data View
+		case "INVENTORY":
+			printInventory();
+			break;
+		case "EQUIPMENT":
+			printEquipment();
+			break;
 		//Combat
 		case "ATTACK":
 			if (command.length != 2) {
@@ -303,6 +321,24 @@ public class OpenMUD {
 		}
 	}
 	
+	private void printInventory() {
+		printOutput("Inventory:");
+		for (Map.Entry<String, Item> itemEntry: currentItems.entrySet()) {
+			printOutput("* "+itemEntry.getKey()+" - "+itemEntry.getValue().shortDescription);
+		}
+	}
+	
+	private void printEquipment() {
+		printOutput("Equipment:");
+		if (equipment.isEmpty()) {
+			printOutput("* Not wielding anything");
+		} else {
+			for (Map.Entry<Slot, Item> itemEntry: equipment.entrySet()) {
+				printOutput("* "+itemEntry.getKey()+" - "+itemEntry.getValue().shortDescription);
+			}
+		}
+	}
+
 	private void kill(String character) {
 		if (currentLocation.characters.containsKey(character)) {
 			Character target = currentLocation.characters.get(character);
