@@ -311,7 +311,7 @@ public class OpenMUD {
 			int i = 1;
 			while (!finished) {
 				printOutput("Round: "+i);
-				finished = performCombatRound(target);
+				finished = performCombatRound(playerCharacter, target);
 				i++;
 			}
 		}
@@ -321,14 +321,23 @@ public class OpenMUD {
 		if (currentLocation.characters.containsKey(character)) {
 			Character target = currentLocation.characters.get(character);
 			printOutput("Attacking "+character+".");
-			performCombatRound(target);
+			performCombatRound(playerCharacter, target);
 		}
 	}
 		
-	private boolean performCombatRound(Character character) {
-		boolean somebodyKilled = performHitAttempt(playerCharacter, character);
-		if (!somebodyKilled) {
-			somebodyKilled = performHitAttempt(character, playerCharacter);
+	private boolean performCombatRound(Character character1, Character character2) {
+		boolean character1AttacksFirst = random.nextBoolean();
+		boolean somebodyKilled = false;
+		if (character1AttacksFirst) {
+			somebodyKilled = performHitAttempt(character1, character2);
+			if (!somebodyKilled) {
+				somebodyKilled = performHitAttempt(character2, character1);
+			}
+		} else {
+			somebodyKilled = performHitAttempt(character2, character1);
+			if (!somebodyKilled) {
+				somebodyKilled = performHitAttempt(character1, character2);
+			}
 		}
 		return somebodyKilled;
 	}
