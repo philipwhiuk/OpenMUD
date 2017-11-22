@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gameData>
+	<skills>
+		<skill id="WOODCUTTING" name="Woodcutting"></skill>
+		<skill id="FIREMAKING" name="Firemaking"></skill>
+	</skills>
+	<items>
+		<item>
+			<shortName>AXE</shortName>
+			<shortDescription>A bronze axe</shortDescription>
+			<description>A battered wood axe with a bronze blade.</description>
+			<canTake>true</canTake>
+		</item>
+		<item>
+			<shortName>TREE</shortName>
+			<shortDescription>An oak tree</shortDescription>
+			<description>An ancient oak tree.</description>
+			<actions>
+				<action id="GETWOOD" item="AXE" />
+			</actions>
+			<canTake>false</canTake>
+		</item>
+		<item>
+			<shortName>LOGS</shortName>
+			<shortDescription>Oak logs</shortDescription>
+			<description>A collection of sturdy oak logs</description>
+			<actions>
+				<action id="LIGHT" item="FLINT" />
+			</actions>
+			<canTake>true</canTake>
+		</item>
+		<item>
+			<shortName>FIRE</shortName>
+			<shortDescription>A burning fire</shortDescription>
+			<description>A hot roaring fire</description>
+			<creationMessage>The tinder catches and the logs begin to burn, creating a roaring fire</creationMessage>
+			<canTake>false</canTake>
+		</item>
+		<item>
+			<shortName>FLINT</shortName>
+			<shortDescription>Steel and flint</shortDescription>
+			<description>Steel and flint - for starting fires</description>
+			<canTake>true</canTake>
+		</item>
+	</items>
+	<locations>
+		<location id="OPENSPACE">
+			<description>You are in a wide open space.</description>
+			<shortDescription>a wide open space</shortDescription>
+		</location>
+		<location id="FOREST">
+			<description>You are in a forest.</description>
+			<shortDescription>a forest</shortDescription>
+			<structures>
+				<structure item="TREE" />
+			</structures>
+		</location>
+		<location id="BEACH">
+			<description>You are standing on a beach.</description>
+			<shortDescription>a beach</shortDescription>
+			<drops>
+				<drop item="AXE" count="1" />
+			</drops>
+		</location>
+		<location id="MOUNTAIN">
+			<description>You are beside a giant mountain</description>
+			<shortDescription>a mountain</shortDescription>
+		</location>
+		<location id="CASTLE">
+			<description>You are at the entrance to a magnificent castle</description>
+			<shortDescription>a castle</shortDescription>
+		</location>
+	</locations>
+	<characters>
+		<character>
+			<shortName>GOBLIN</shortName>
+			<shortDescription>A goblin foot-soldier</shortDescription>
+			<description>A scrawny goblin foot soldier</description>
+			<startingLocation>FOREST</startingLocation>
+			<health>7</health>
+		</character>
+		<character>
+			<shortName>BOLDUR</shortName>
+			<shortDescription>Boldur the Shopkeeper</shortDescription>
+			<description>A purveyor of common supplies.</description>
+			<startingLocation>CASTLE</startingLocation>
+			<health>10</health>
+		</character>
+	</characters>
+	<actions>
+		<action id="GETWOOD">
+			<effect type="PROVIDES" item="LOGS" />
+			<effect type="REWARDS" skill="WOODCUTTING" modifier="15" />
+		</action>
+		<action id="LIGHT">
+			<effect type="CREATES" structure="FIRE" />
+			<effect type="REWARDS" skill="FIREMAKING" modifier="15" />
+		</action>
+	</actions>
+	<connections>
+		<connection direction="NORTH" from="OPENSPACE" to="FOREST" />
+		<connection direction="SOUTH" from="OPENSPACE" to="CASTLE" />
+		<connection direction="EAST" from="OPENSPACE" to="BEACH" />
+		<connection direction="WEST" from="OPENSPACE" to="MOUNTAIN" />
+		
+		<connection direction="SOUTH" from="FOREST" to="OPENSPACE" />
+		<connection direction="NORTH" from="CASTLE" to="OPENSPACE" />
+		<connection direction="WEST" from="BEACH" to="OPENSPACE" />
+		<connection direction="EAST" from="MOUNTAIN" to="OPENSPACE" />
+	</connections>
+</gameData>
