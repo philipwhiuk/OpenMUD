@@ -84,6 +84,7 @@
 			<description>A scrawny goblin foot soldier</description>
 			<startingLocation>FOREST</startingLocation>
 			<health>7</health>
+			<canTalk>false</canTalk>
 		</character>
 		<character>
 			<shortName>BOLDUR</shortName>
@@ -91,6 +92,8 @@
 			<description>A purveyor of common supplies.</description>
 			<startingLocation>CASTLE</startingLocation>
 			<health>10</health>
+			<canTalk>true</canTalk>
+			<openingRemark></openingRemark>
 		</character>
 	</characters>
 	<actions>

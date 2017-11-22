@@ -75,6 +75,9 @@ public class OpenMUD {
 		String description;
 		int health;
 		boolean alive;
+		boolean canTalk;
+		boolean startsTalking;
+		ConversationNode openingRemark;
 	}
 	
 	enum EffectType {
@@ -110,6 +113,27 @@ public class OpenMUD {
 	
 	enum Slot {
 		HEAD, BODY, MAIN_HAND, OFF_HAND, LEGS;
+	}
+	
+	class ConversationState {
+		ConversationNode currentNode;
+		ConversationStateType stateType;
+		String characterName;
+	}
+	
+	class ConversationNode {
+		private String remark;
+		private Map<String, ConversationOption> options;
+	}
+	
+	class ConversationOption {
+		private String shortName;
+		private String response;
+		private ConversationNode childNode; 
+	}
+	
+	enum ConversationStateType {
+		INITIAL, MORE_OPTIONS, FINISHED;
 	}
 	
 	public OpenMUD(InputStream in, OutputStream out) throws Exception {
@@ -175,6 +199,7 @@ public class OpenMUD {
 			character.shortDescription = characterXml.getChildText("shortDescription");
 			character.description = characterXml.getChildText("description");
 			character.health = Integer.parseInt(characterXml.getChildText("health"));
+			character.canTalk = Boolean.parseBoolean(characterXml.getChildText("canTalk"));
 			characters.put(character.shortName, character);
 			locations.get(characterXml.getChildText("startingLocation")).characters.put(character.shortName, character);
 		}
@@ -275,65 +300,88 @@ public class OpenMUD {
 		final String action = command[0];
 		switch(action) {
 		//System
-		case "QUIT":
-			printOutput("Thanks for playing");
-			running = false;
-			break;
+		case "QUIT": handleQuitCommand(); break;
 		//Data View
-		case "INVENTORY":
-			printInventory();
-			break;
-		case "EQUIPMENT":
-			printEquipment();
-			break;
+		case "INVENTORY": printInventory(); break;
+		case "EQUIPMENT": printEquipment(); break;
+		//Conversation
+		case "TALK": handleTalkCommand(command); break;
 		//Combat
-		case "ATTACK":
-			if (command.length != 2) {
-				printOutput("Need to provide a character to attack");
-			} else {
-				attack(command[1]);
-			}
-			break;
-		case "KILL":
-			if (command.length != 2) {
-				printOutput("Need to provide a character to attack");
-			} else {
-				kill(command[1]);
-			}
-			break;
+		case "ATTACK": handleAttackCommand(command); break;
+		case "KILL": handleKillCommand(command); break;
 		//General	
-		case "MOVE":
-			if (command.length != 2) {
-				printOutput("Need to provide a direction to move");
-			} else {
-				move(command[1]);
-			}
-			break;
-		case "TAKE":
-			if (command.length != 2) {
-				printOutput("Need to provide an item to take");
-			} else {
-				take(command[1]);
-			}
-			break;
-		case "DROP":
-			if (command.length != 2) {
-				printOutput("Need to provide an item to drop");
-			} else {
-				drop(command[1]);
-			}
-			break;
-		case "USE":
-			String[] commandData = command[1].split(" ");
-			if (commandData.length != 2) {
-				printOutput("Need to provide an item and a target");
-			} else {
-				use(commandData[0], command[1]);
-			}
-			break;
-		default:
-			printOutput("Unrecognised command: "+ fullCommand);
+		case "MOVE": handleMoveCommand(command);  break;
+		case "TAKE": handleTakeCommand(command); break;
+		case "DROP": handleDropCommand(command); break;
+		case "USE": handleUseCommand(command); break;
+		default: handleUnrecognisedCommand(fullCommand); break;
 		}
+	}
+	
+	private void handleQuitCommand() {
+		printOutput("Thanks for playing");
+		running = false;
+	}
+	
+	private void handleAttackCommand(String[] command) {
+		if (command.length != 2) {
+			printOutput("Need to provide a character to attack");
+		} else {
+			attack(command[1]);
+		}
+	}
+	
+	private void handleKillCommand(String[] command) {
+		if (command.length != 2) {
+			printOutput("Need to provide a character to attack");
+		} else {
+			kill(command[1]);
+		}
+	}
+	
+	private void handleTalkCommand(String[] command) {
+		if (command.length != 2) {
+			printOutput("Need to provide a character to talk to");
+		} else {
+			talk(command[1]);
+		}
+	}
+	
+	private void handleMoveCommand(String[] command) {
+		if (command.length != 2) {
+			printOutput("Need to provide a direction to move");
+		} else {
+			move(command[1]);
+		}
+	}
+	
+	private void handleTakeCommand(String[] command) {
+		if (command.length != 2) {
+			printOutput("Need to provide an item to take");
+		} else {
+			take(command[1]);
+		}
+	}
+	
+	private void handleDropCommand(String[] command) {
+		if (command.length != 2) {
+			printOutput("Need to provide an item to drop");
+		} else {
+			drop(command[1]);
+		}
+	}
+	
+	private void handleUseCommand(String[] command) {
+		String[] commandData = command[1].split(" ");
+		if (commandData.length != 2) {
+			printOutput("Need to provide an item and a target");
+		} else {
+			use(commandData[0], command[1]);
+		}
+	}
+	
+	private void handleUnrecognisedCommand(String fullCommand) {
+		printOutput("Unrecognised command: "+ fullCommand);
 	}
 	
 	private void printInventory() {
@@ -429,6 +477,76 @@ public class OpenMUD {
 			}
 		}
 		return false;
+	}
+	
+	private void talk(String characterName) {
+		if (currentLocation.characters.containsKey(characterName)) {
+			if (currentLocation.characters.get(characterName).canTalk) {
+				Character character = currentLocation.characters.get(characterName);
+				performConversation(character);
+			} else {
+				printOutput("This character can't talk");
+			}
+		} else {
+			printOutput("That character doesn't exist");
+		}
+	}
+	
+	private void performConversation(Character character) {
+		Map<String, ConversationOption> conversationOptions;
+		if (character.startsTalking) {
+			printOutput(character.openingRemark.remark);
+		}
+		
+		ConversationState state = buildInitialState(character.openingRemark);
+		while (!state.stateType.equals(ConversationStateType.FINISHED)) {
+			state = performDialog(state);
+		}
+	}
+	
+	private ConversationState buildInitialState(ConversationNode startNode) {
+		ConversationState state = new ConversationState();
+		state.stateType = ConversationStateType.INITIAL;
+		state.currentNode = startNode;
+		return state;
+	}
+	
+	private ConversationState performDialog(ConversationState state) {
+		printOutput("What do you want to say?");
+		printConversationOptions(state.currentNode.options);
+		String optionName = readCommand().toUpperCase();
+		if (state.currentNode.options.containsKey(optionName)) {
+			ConversationOption option = state.currentNode.options.get(optionName);
+			sayOption(option);
+			state = processResponse(state, option);
+		}
+		return state;
+	}
+	
+	private void printConversationOptions(Map<String, ConversationOption> options) {
+		for (Map.Entry<String, ConversationOption> option: options.entrySet()) {
+			printOutput("* "+option.getKey()+": "+option.getValue().response);
+		}
+	}
+	
+	private void sayOption(ConversationOption option) {
+		printOutput("\""+option.response+"\"");
+	}
+	
+	private ConversationState processResponse(ConversationState currentState, ConversationOption option) {
+		currentState.currentNode = option.childNode;
+		printResponse(currentState.characterName, currentState.currentNode);
+		
+		if (currentState.currentNode.options != null && currentState.currentNode.options.isEmpty()) {		
+			currentState.stateType = ConversationStateType.FINISHED;
+		} else {
+			currentState.stateType = ConversationStateType.MORE_OPTIONS;
+		}
+		return currentState;
+	}
+	
+	private void printResponse(String characterName, ConversationNode node) {
+		printOutput(characterName+": \""+node.remark+"\"");
 	}
 	
 	private void move(String directionString) {
