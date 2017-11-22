@@ -149,6 +149,11 @@ public class OpenMUD {
 		populateLocations(root);
 		populateConnections(root);
 		populateCharacters(root);
+		
+		populateStartData(root);
+	}
+	
+	private void populateStartData(Element root) {
 
 		currentLocation = locations.get(root.getChildText("startingLocation"));
 		currentItems = new HashMap<>();
@@ -261,7 +266,11 @@ public class OpenMUD {
 	}
 	
 	private void performTurn() {
-		final String fullCommand = readCommand().trim();
+		String nextCommand = readCommand();
+		processCommand(nextCommand);
+	}
+	
+	private void processCommand(final String fullCommand) {
 		final String[] command = fullCommand.toUpperCase().split(" ", 2);
 		final String action = command[0];
 		switch(action) {
@@ -593,7 +602,7 @@ public class OpenMUD {
 	private String readCommand() {
 		String line = scanner.nextLine();
 		printOutput("> "+ line);
-		return line;
+		return line.trim();
 	}
 	
 	private void printOutput(String output) {
