@@ -17,6 +17,8 @@ import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 
 public class OpenMUD {
+	
+	public static final int MAX_DAMAGE = 6;
 
 	InputStream in;
 	OutputStream out;
@@ -30,8 +32,8 @@ public class OpenMUD {
 	Location currentLocation;
 	Map<String, Item> currentItems;
 	Map<String, Skill> skills;
-	int health = 10;
-	boolean alive;
+	Character playerCharacter;
+	Random random = new Random();
 	
 	public static void main(String[] args) throws Exception {
 		new OpenMUD(System.in, System.out);
@@ -69,6 +71,7 @@ public class OpenMUD {
 		String shortDescription;
 		String description;
 		int health;
+		boolean alive;
 	}
 	
 	enum EffectType {
@@ -112,11 +115,13 @@ public class OpenMUD {
 	
 	private void playGame() throws Exception {
 		setupGame();
-		alive = true;
+		playerCharacter = new Character();
+		playerCharacter.health = 10;
+		playerCharacter.alive = true;
 		changeLocation(currentLocation);
 		do {
 			performTurn();			
-		} while(alive);
+		} while(playerCharacter.alive);
 		printOutput("Game Over");
 	}
 
@@ -319,30 +324,51 @@ public class OpenMUD {
 			performCombatRound(target);
 		}
 	}
-	
-	private boolean performCombatRound(Character character) {
-		int hit = new Random().nextInt(6);
-		printOutput("Did "+hit+"HP of damage");
-		if (character.health <= hit) {
-			printOutput("Killed "+character.shortName+".");
-			currentLocation.characters.remove(character.shortName);
-			return true;
-		} else {
-			character.health -= hit;
-			printOutput(character.shortName+" has "+character.health+"HP left.");
 		
-			int response = new Random().nextInt(6);
-			printOutput(character.shortName+" did "+response+"HP of damage");
-			if (health <= response) {
-				printOutput("Killed by "+character.shortDescription);
-				alive = false;
-				return true;
+	private boolean performCombatRound(Character character) {
+		boolean somebodyKilled = performHitAttempt(playerCharacter, character);
+		if (!somebodyKilled) {
+			somebodyKilled = performHitAttempt(character, playerCharacter);
+		}
+		return somebodyKilled;
+	}
+	
+	private boolean performHitAttempt(Character attacker, Character defender) {
+		boolean hit = random.nextBoolean();
+		if (hit) {
+			int damage = random.nextInt(MAX_DAMAGE);
+			if (attacker == playerCharacter) {
+				printOutput("Did "+damage+"HP of damage");
+				if (defender.health <= damage) {
+					printOutput("Killed "+defender.shortName+".");
+					defender.alive = false;
+					currentLocation.characters.remove(defender.shortName);
+					return true;
+				} else {
+					defender.health -= damage;
+					printOutput(defender.shortName+" has "+defender.health+"HP left.");
+				}
+			} else if (defender == playerCharacter){
+				printOutput(attacker.shortName+" did "+damage+"HP of damage");
+				if (defender.health <= damage) {
+					printOutput("Killed by "+attacker.shortName+".");
+					defender.alive = false;
+					return true;
+				} else {
+					defender.health -= damage;
+					printOutput("You have "+defender.health+"HP left.");
+				}
 			} else {
-				health = health - response;
-				printOutput("You have "+health+"HP left.");
-				return false;
+				throw new UnsupportedOperationException();
+			}
+		} else {
+			if (attacker == playerCharacter) {
+				printOutput("Missed "+defender.shortName);
+			} else {
+				printOutput(attacker.shortName+" missed");
 			}
 		}
+		return false;
 	}
 	
 	private void move(String directionString) {
