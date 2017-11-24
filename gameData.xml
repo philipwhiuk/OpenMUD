@@ -3,12 +3,13 @@
 	<skills>
 		<skill id="WOODCUTTING" name="Woodcutting"></skill>
 		<skill id="FIREMAKING" name="Firemaking"></skill>
+		<skill id="MINING" name="Mining"></skill>
 	</skills>
 	<items>
 		<item>
-			<shortName>AXE</shortName>
-			<shortDescription>A bronze axe</shortDescription>
-			<description>A battered wood axe with a bronze blade.</description>
+			<shortName>HATCHET</shortName>
+			<shortDescription>A bronze hatchet</shortDescription>
+			<description>A battered wood hatchet with a bronze blade.</description>
 			<canTake>true</canTake>
 		</item>
 		<item>
@@ -16,7 +17,16 @@
 			<shortDescription>An oak tree</shortDescription>
 			<description>An ancient oak tree.</description>
 			<actions>
-				<action id="GETWOOD" item="AXE" />
+				<action id="GETWOOD" item="HATCHET" />
+			</actions>
+			<canTake>false</canTake>
+		</item>
+		<item>
+			<shortName>ROCK</shortName>
+			<shortDescription>A rocky outcrop</shortDescription>
+			<description>A rocky outcrop.</description>
+			<actions>
+				<action id="MINE" item="PICKAXE" />
 			</actions>
 			<canTake>false</canTake>
 		</item>
@@ -48,6 +58,24 @@
 			<description>A bronze dagger - useful in a pinch.</description>
 			<canTake>true</canTake>
 		</item>
+		<item>
+			<shortName>PICKAXE</shortName>
+			<shortDescription>Iron pickaxe</shortDescription>
+			<description>An iron pickaxe - useful for mining.</description>
+			<canTake>true</canTake>
+		</item>
+		<item>
+			<shortName>ROCK_SHARDS</shortName>
+			<shortDescription>Rock shards</shortDescription>
+			<description>Chunks of rock</description>
+			<canTake>true</canTake>
+		</item>
+		<item>
+			<shortName>IRON_ORE</shortName>
+			<shortDescription>Iron ore</shortDescription>
+			<description>Chunks of iron ore.</description>
+			<canTake>true</canTake>
+		</item>
 	</items>
 	<locations>
 		<location id="OPENSPACE">
@@ -65,12 +93,15 @@
 			<description>You are standing on a beach.</description>
 			<shortDescription>a beach</shortDescription>
 			<drops>
-				<drop item="AXE" count="1" />
+				<drop item="HATCHET" count="1" />
 			</drops>
 		</location>
 		<location id="MOUNTAIN">
 			<description>You are beside a giant mountain</description>
 			<shortDescription>a mountain</shortDescription>
+			<structures>
+				<structure item="ROCK" />
+			</structures>
 		</location>
 		<location id="CASTLE">
 			<description>You are at the entrance to a magnificent castle</description>
@@ -115,6 +146,11 @@
 			<effect type="PROVIDES" item="LOGS" />
 			<effect type="REWARDS" skill="WOODCUTTING" modifier="15" />
 		</action>
+		<action id="MINE">
+			<effect type="PROVIDES" item="ROCK_SHARDS" />
+			<effect type="PROVIDES" item="IRON_ORE" />
+			<effect type="REWARDS" skill="MINING" modifier="15" />
+		</action>
 		<action id="LIGHT">
 			<effect type="CREATES" structure="FIRE" />
 			<effect type="REWARDS" skill="FIREMAKING" modifier="15" />
@@ -134,6 +170,7 @@
 	<startingLocation>OPENSPACE</startingLocation>
 	<startingItems>
 		<item>FLINT</item>
+		<item>PICKAXE</item>
 	</startingItems>
 	<startingEquipment>
 		<MAIN_HAND>DAGGER</MAIN_HAND>
