@@ -7,7 +7,7 @@ import java.io.UnsupportedEncodingException;
 import org.junit.Test;
 
 public class OpenMUDTest {
-
+	/**
 	private InputStream sendCommands(String[] commands) throws UnsupportedEncodingException {
 		StringBuilder builder = new StringBuilder();
 		for (String command: commands) {
@@ -52,4 +52,5 @@ public class OpenMUDTest {
 		InputStream in = sendCommands(new String[]{"MOVE EAST", "TAKE AXE", "MOVE WEST", "MOVE NORTH", "USE AXE TREE", "MOVE SOUTH", "DROP LOGS", "USE FLINT LOGS", "MOVE EAST", "MOVE WEST", "QUIT"});
 		new OpenMUD(in, System.out);
 	}
+	**/
 }
