@@ -331,6 +331,7 @@ public class Server {
 		switch(action) {
 		//System
 		case "QUIT": handleQuitCommand(); break;
+		case "COMMANDS": printCommands(); break;
 		//Data View
 		case "INVENTORY": printInventory(); break;
 		case "EQUIPMENT": printEquipment(); break;
@@ -340,6 +341,7 @@ public class Server {
 		case "ATTACK": handleAttackCommand(command); break;
 		case "KILL": handleKillCommand(command); break;
 		//General	
+		case "GO":
 		case "MOVE": handleMoveCommand(command);  break;
 		case "TAKE": handleTakeCommand(command); break;
 		case "DROP": handleDropCommand(command); break;
@@ -412,6 +414,20 @@ public class Server {
 	
 	private void handleUnrecognisedCommand(String fullCommand) {
 		sendOutput("Unrecognised command: "+ fullCommand);
+	}
+	
+	private void printCommands() {
+		sendOutput("COMMANDS - List commands");
+		sendOutput("INVENTORY - Show current inventory");
+		sendOutput("EQUIPMENT - Show current equipment");
+		sendOutput("TALK - Talk to an NPC");
+		sendOutput("ATTACK - Attack a character");
+		sendOutput("KILL - Kill a character (fight until death)");
+		sendOutput("MOVE/GO - Move in a direction");
+		sendOutput("TAKE - Take an item");
+		sendOutput("DROP - Drop an item");
+		sendOutput("USE - Use an item");
+		sendOutput("QUIT - Quit the game");
 	}
 	
 	private void printInventory() {
