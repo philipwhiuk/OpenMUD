@@ -28,6 +28,7 @@ public class OpenMUD {
 	Map<String, Item> items;
 	Map<String, Action> actions;
 	Map<String, Character> characters;
+	Map<String, ConversationNode> conversationNodes;
 	
 	boolean running = true;
 	
@@ -77,7 +78,7 @@ public class OpenMUD {
 		boolean alive;
 		boolean canTalk;
 		boolean startsTalking;
-		ConversationNode openingRemark;
+		String openingRemark;
 	}
 	
 	enum EffectType {
@@ -122,14 +123,15 @@ public class OpenMUD {
 	}
 	
 	class ConversationNode {
+		private String id;
 		private String remark;
-		private Map<String, ConversationOption> options;
+		private Map<String, ConversationOption> options = new HashMap<>();
 	}
 	
 	class ConversationOption {
-		private String shortName;
+		private String id;
 		private String response;
-		private ConversationNode childNode; 
+		private String childNode; 
 	}
 	
 	enum ConversationStateType {
@@ -164,6 +166,7 @@ public class OpenMUD {
 		actions = new HashMap<>();
 		skills = new HashMap<>();
 		characters = new HashMap<>();
+		conversationNodes = new HashMap<>();
 		
 		Element root = new SAXBuilder().build(new File("gameData.xml")).getRootElement();
 		populateSkills(root);
@@ -173,6 +176,7 @@ public class OpenMUD {
 		populateLocations(root);
 		populateConnections(root);
 		populateCharacters(root);
+		populateConversationNodes(root);
 		
 		populateStartData(root);
 	}
@@ -200,8 +204,28 @@ public class OpenMUD {
 			character.description = characterXml.getChildText("description");
 			character.health = Integer.parseInt(characterXml.getChildText("health"));
 			character.canTalk = Boolean.parseBoolean(characterXml.getChildText("canTalk"));
+			character.startsTalking = Boolean.parseBoolean(characterXml.getChildText("startsTalking"));
+			character.openingRemark = characterXml.getChildText("openingRemark");
 			characters.put(character.shortName, character);
 			locations.get(characterXml.getChildText("startingLocation")).characters.put(character.shortName, character);
+		}
+	}
+	
+	private void populateConversationNodes(Element root) {
+		for (Element conversationNodeXml : root.getChild("conversations").getChildren("conversation")) {
+			ConversationNode node = new ConversationNode();
+			node.id = conversationNodeXml.getAttributeValue("id");
+			node.remark = conversationNodeXml.getChildText("remark");
+			if (conversationNodeXml.getChild("options") != null) {
+				for (Element optionXml: conversationNodeXml.getChild("options").getChildren("option")) {
+					ConversationOption option = new ConversationOption();
+					option.id = optionXml.getAttributeValue("id");
+					option.response = optionXml.getChildText("response");
+					option.childNode = optionXml.getChildText("childNode");
+					node.options.put(option.id, option);
+				}
+			}
+			conversationNodes.put(node.id, node);
 		}
 	}
 
@@ -493,21 +517,26 @@ public class OpenMUD {
 	}
 	
 	private void performConversation(Character character) {
-		Map<String, ConversationOption> conversationOptions;
-		if (character.startsTalking) {
-			printOutput(character.openingRemark.remark);
+		if (character.openingRemark == null) {
+			printOutput(character.shortName + " has nothing to say to you.");
+			return;
 		}
 		
-		ConversationState state = buildInitialState(character.openingRemark);
+		if (character.startsTalking) {
+			printOutput(conversationNodes.get(character.openingRemark).remark);
+		}
+		
+		ConversationState state = buildInitialState(character.openingRemark, character.shortDescription);
 		while (!state.stateType.equals(ConversationStateType.FINISHED)) {
 			state = performDialog(state);
 		}
 	}
 	
-	private ConversationState buildInitialState(ConversationNode startNode) {
+	private ConversationState buildInitialState(String startNode, String characterName) {
 		ConversationState state = new ConversationState();
 		state.stateType = ConversationStateType.INITIAL;
-		state.currentNode = startNode;
+		state.currentNode = conversationNodes.get(startNode);
+		state.characterName = characterName;
 		return state;
 	}
 	
@@ -534,7 +563,12 @@ public class OpenMUD {
 	}
 	
 	private ConversationState processResponse(ConversationState currentState, ConversationOption option) {
-		currentState.currentNode = option.childNode;
+		if (option.childNode == null) {
+			currentState.stateType = ConversationStateType.FINISHED;
+			currentState.currentNode = null;
+			return currentState;
+		}
+		currentState.currentNode = conversationNodes.get(option.childNode);
 		printResponse(currentState.characterName, currentState.currentNode);
 		
 		if (currentState.currentNode.options != null && currentState.currentNode.options.isEmpty()) {		

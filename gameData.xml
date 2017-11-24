@@ -93,9 +93,23 @@
 			<startingLocation>CASTLE</startingLocation>
 			<health>10</health>
 			<canTalk>true</canTalk>
-			<openingRemark></openingRemark>
+			<openingRemark>BOLDUR_START</openingRemark>
 		</character>
 	</characters>
+	<conversations>
+		<conversation id="BOLDUR_START">
+			<remark></remark>
+			<options>
+				<option id="HELLO">
+					<response>Hi, what are you selling</response>
+					<childNode>BOLDUR_SHOW_SHOP</childNode>
+				</option>
+			</options>
+		</conversation>
+		<conversation id="BOLDUR_SHOW_SHOP">
+			<remark>Here, take a look:</remark>
+		</conversation>
+	</conversations>
 	<actions>
 		<action id="GETWOOD">
 			<effect type="PROVIDES" item="LOGS" />
