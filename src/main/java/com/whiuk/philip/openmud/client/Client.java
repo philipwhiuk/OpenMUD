@@ -20,11 +20,14 @@ import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
 
+import org.apache.log4j.Logger;
+
 import com.whiuk.philip.openmud.Messages;
 
 @SuppressWarnings("serial")
 public class Client extends JFrame {
-
+	private static final Logger logger = Logger.getLogger(Client.class);
+	
 	private final ClientGameThread gameThread;
 	private NetworkReceiverThread networkReceiverThread;
 	private JTextArea textArea;
@@ -158,7 +161,7 @@ public class Client extends JFrame {
 				outputStream = new ObjectOutputStream(socket.getOutputStream());
 				inputStream = new ObjectInputStream(socket.getInputStream());
 			} catch (IOException e) {
-				e.printStackTrace();
+				logger.error("IO error while creating object streams", e);
 			}
 			networkReceiverThread = new NetworkReceiverThread();
 			startPipes();
@@ -170,9 +173,9 @@ public class Client extends JFrame {
 		
 		private boolean attemptConnection() {
 			try {
-				System.out.println("Connecting to " + address + ":" + port);
+				logger.info("Connecting to " + address + ":" + port);
 				socket = new Socket(address, port);
-				System.out.println("Connected to server");
+				logger.info("Connected to server");
 				return true;
 			} catch (IOException e) {
 				try {
