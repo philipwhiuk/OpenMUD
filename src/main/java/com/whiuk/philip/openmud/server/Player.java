@@ -501,6 +501,7 @@ class Player {
 	
 	private String readCommand() {
 		try {
+			client.inputStream.readByte(); //TEXT
 			String line = client.inputStream.readUTF();
 			sendOutput("> "+ line);
 			return line.trim();

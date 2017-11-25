@@ -127,6 +127,7 @@ public class Client extends JFrame {
 				final String message = source.getText();
 				source.setText("");
 				try {
+					outputStream.writeByte(Messages.ToServer.TEXT);
 					outputStream.writeUTF(message);
 					outputStream.flush();
 				} catch (IOException ioex) {
