@@ -25,7 +25,7 @@ public class Client extends JFrame {
 
 	private final ClientGameThread gameThread;
 	private NetworkReceiverThread networkReceiverThread;
-	private final JTextArea textArea;
+	private JTextArea textArea;
 
 	private final String address;
 	private final int port;
@@ -95,7 +95,19 @@ public class Client extends JFrame {
 		this.port = port;
 		Dimension size = new Dimension(1024, 768);
 		setPreferredSize(size);
-
+		buildComponents();
+		setLayout(new BorderLayout());
+		this.getContentPane().add(gameCanvas, BorderLayout.NORTH);
+		this.getContentPane().add(textAreaScroll, BorderLayout.CENTER);
+		this.getContentPane().add(input, BorderLayout.SOUTH);
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		pack();
+		setVisible(true);
+		gameThread = new ClientGameThread();
+		gameThread.start();
+	}
+	
+	private void buildComponents() {
 		gameCanvas = new GameCanvas();
 		gameCanvas.setSize(1024, 520);
 
@@ -120,18 +132,6 @@ public class Client extends JFrame {
 				}
 			}
 		});
-
-		setLayout(new BorderLayout());
-		this.getContentPane().add(gameCanvas, BorderLayout.NORTH);
-		this.getContentPane().add(textAreaScroll, BorderLayout.CENTER);
-		this.getContentPane().add(input, BorderLayout.SOUTH);
-
-		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		pack();
-		setVisible(true);
-
-		gameThread = new ClientGameThread();
-		gameThread.start();
 	}
 	
 	private void setRunning(boolean isRunning) {
