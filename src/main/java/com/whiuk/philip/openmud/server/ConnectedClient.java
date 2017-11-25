@@ -5,7 +5,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 class ConnectedClient {
-	long id;
+	int id;
 	Socket socket;
 	Thread thread;
 	ObjectOutputStream outputStream;

@@ -10,12 +10,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Logger;
+
 public class Server {
+	public static final Logger logger = Logger.getLogger(Server.class);
 	
 	public static final int MAX_DAMAGE = 6;
 	
 	private ServerSocket serverSocket;
-	private Map<Long, ConnectedClient> connectedClients = new HashMap<>();
+	private Map<Integer, ConnectedClient> connectedClients = new HashMap<>();
 	private World world;
 	
 	boolean running = true;
@@ -50,33 +54,35 @@ public class Server {
 		}
 	}
 	
-	private long nextId() {
-		long value = random.nextLong();
+	private int nextId() {
+		int value = random.nextInt();
 		while(connectedClients.containsKey(value)) {
-			System.out.println("collision");
-			value = random.nextLong();
+			logger.warn("Collision while fetching unused client ID");
+			value = random.nextInt();
 		}
 		return value;
 	}
 	
 	public Server(int port) throws Exception {
-		System.out.println("Starting server");		
+		BasicConfigurator.configure();
+		logger.info("Starting server");		
 		buildWorld();
 		createNetworkSocket(port);
 		
 		boolean listening = true;
-		System.out.println("Listening for clients");
+		logger.info("Listening for clients");
 		while (listening) {
 			acceptClient();
 		}
 	}
 	
 	private void buildWorld() throws Exception {
-		System.out.println("Loading scenario");
+		logger.info("Loading scenario");
 		world = new XMLWorldFactory().create("gameData.xml");
 	}
 	
 	private void createNetworkSocket(int port) throws IOException {
+		logger.info("Creating TCP socket on port:" + port);
 		serverSocket = new ServerSocket(port);
 	}
 	
@@ -87,11 +93,16 @@ public class Server {
 		client.thread = new ClientThread(client);
 		client.socket = clientSocket;
 		client.thread.start();
-		System.out.println("Accepted client from: "+clientSocket.getInetAddress()+":"+clientSocket.getPort()+" on "+clientSocket.getLocalPort());
+		if (logger.isInfoEnabled()) {
+			String logClientDetails = String.format("Accepted client [%1d] from: %2s:%3d on %4d", 
+					client.id, clientSocket.getInetAddress(), clientSocket.getPort(), clientSocket.getLocalPort());
+			logger.info(logClientDetails);
+		}
 		connectedClients.put(nextId(), client);
 	}
 	
 	void disconnect(ConnectedClient client) {
+		logger.info("Disconnecting client ["+client.id+"]");
 		connectedClients.remove(client.id);
 		closeQuietly(client.outputStream);
 		closeQuietly(client.inputStream);
