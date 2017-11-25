@@ -2,6 +2,8 @@ package com.whiuk.philip.openmud;
 
 import java.io.IOException;
 
+import com.whiuk.philip.openmud.server.Server;
+
 public class OpenMUD {	
 	public static void main(String[] args) throws Exception {
 		new Thread(new Runnable() {
