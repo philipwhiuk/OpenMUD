@@ -111,7 +111,7 @@ public class Client extends JFrame {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-
+			networkReceiverThread = new NetworkReceiverThread();
 			startPipes();
 		}
 
