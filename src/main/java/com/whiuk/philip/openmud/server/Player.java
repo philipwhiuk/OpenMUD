@@ -4,13 +4,12 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.whiuk.philip.openmud.Messages;
+
 class Player {
 	private final Server server;
 	private final World world;
 
-	/**
-	 * @param server
-	 */
 	Player(Server server, World world) {
 		this.server = server;
 		this.world = world;
@@ -512,6 +511,7 @@ class Player {
 	
 	private void sendOutput(String output) {
 		try {
+			client.outputStream.writeByte(Messages.FromServer.TEXT);
 			client.outputStream.writeUTF(output);
 			client.outputStream.flush();
 		} catch (IOException e) {

@@ -10,8 +10,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import org.jdom2.JDOMException;
-
 public class Server {
 	
 	public static final int MAX_DAMAGE = 6;

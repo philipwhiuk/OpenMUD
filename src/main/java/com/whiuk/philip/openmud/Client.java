@@ -36,7 +36,58 @@ public class Client extends JFrame {
 	private volatile boolean running = true;
 	private JTextField input;
 	private JScrollPane textAreaScroll;
-	private Canvas canvas;
+	private GameCanvas gameCanvas;
+	private GameState gameState;
+	
+	private class MapArea {
+		private String name;
+		private Tile[][] tiles;
+	}
+	
+	private class Tile {
+		Color color;		
+	}
+	
+	class GameState {
+		boolean loggedIn;
+		boolean loginFailed;
+		String username;
+		MapArea room;
+		
+		public void handleLoggedIn(String username) {
+			loggedIn = true;
+			loginFailed = false;
+			this.username = username;
+			gameCanvas.repaint();
+		}
+		public void handleLoginFailure() {
+			loggedIn = false;
+			loginFailed = true;
+		}
+		public void handleRoomData(String roomName, ObjectInputStream objectInputStream) throws IOException {
+			MapArea room = new MapArea();
+			room.name = roomName;
+			room.tiles = new Tile[10][10];
+			for (int x = 0; x < room.tiles.length; x++) {
+				for (int y = 0; y < room.tiles[x].length; y++) {
+					room.tiles[x][y] = new Tile();
+					room.tiles[x][y].color = new Color(
+							objectInputStream.readByte(), 
+							objectInputStream.readByte(), 
+							objectInputStream.readByte());
+				}
+			}
+			this.room = room;
+			gameCanvas.repaint();
+		}
+	}
+	
+	class GameCanvas extends Canvas  {
+		public void paint(Graphics g) {
+			g.setColor(Color.BLACK);
+			g.fillRect(0, 0, this.getWidth(), this.getHeight());
+		}
+	}
 
 	public Client(String address, int port) throws UnknownHostException, IOException {
 		super("OpenMUD Game Client");
@@ -45,13 +96,8 @@ public class Client extends JFrame {
 		Dimension size = new Dimension(1024, 768);
 		setPreferredSize(size);
 
-		canvas = new Canvas() {
-			public void paint(Graphics g) {
-				g.setColor(Color.BLACK);
-				g.fillRect(0, 0, this.getWidth(), this.getHeight());
-			}
-		};
-		canvas.setSize(1024, 520);
+		gameCanvas = new GameCanvas();
+		gameCanvas.setSize(1024, 520);
 
 		textArea = new JTextArea();
 		textArea.setEditable(false);
@@ -76,7 +122,7 @@ public class Client extends JFrame {
 		});
 
 		setLayout(new BorderLayout());
-		this.getContentPane().add(canvas, BorderLayout.NORTH);
+		this.getContentPane().add(gameCanvas, BorderLayout.NORTH);
 		this.getContentPane().add(textAreaScroll, BorderLayout.CENTER);
 		this.getContentPane().add(input, BorderLayout.SOUTH);
 
@@ -144,13 +190,26 @@ public class Client extends JFrame {
 		public void run() {
 			try {
 				while (running) {
-					final String input = inputStream.readUTF();
-					SwingUtilities.invokeLater(new Runnable() {
-						public void run() {
-							textArea.append(input + System.lineSeparator());
-							canvas.repaint();
-						}
-					});
+					final byte msgType = inputStream.readByte();
+					switch (msgType) {
+						case Messages.FromServer.LOGIN_SUCCESS: 
+							gameState.handleLoggedIn(inputStream.readUTF());
+							break;
+						case Messages.FromServer.LOGIN_FAILURE:
+							gameState.handleLoginFailure();
+							break;
+						case Messages.FromServer.ROOM:
+							gameState.handleRoomData(inputStream.readUTF(), inputStream);
+							break;
+						case Messages.FromServer.TEXT:
+							final String input = inputStream.readUTF();
+							SwingUtilities.invokeLater(new Runnable() {
+								public void run() {
+									textArea.append(input + System.lineSeparator());
+								}
+							});
+							break;
+					}
 				}
 			} catch (Exception e) {
 				setRunning(false);
