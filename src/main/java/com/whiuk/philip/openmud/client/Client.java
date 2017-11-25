@@ -130,7 +130,8 @@ public class Client extends JFrame {
 				final String message = source.getText();
 				source.setText("");
 				try {
-					outputStream.writeByte(Messages.ToServer.TEXT);
+					outputStream.writeByte(Messages.ToServer.GAME);
+					outputStream.writeByte(Messages.ToServer.Game.TEXT);
 					outputStream.writeUTF(message);
 					outputStream.flush();
 				} catch (IOException ioex) {
@@ -198,16 +199,24 @@ public class Client extends JFrame {
 				while (running) {
 					final byte msgType = inputStream.readByte();
 					switch (msgType) {
-						case Messages.FromServer.LOGIN_SUCCESS: 
+					case Messages.FromServer.AUTH:
+						byte authMsgType = inputStream.readByte();
+						switch(authMsgType) {
+						case Messages.FromServer.Auth.LOGIN_SUCCESS: 
 							gameState.handleLoggedIn(inputStream.readUTF());
 							break;
-						case Messages.FromServer.LOGIN_FAILURE:
+						case Messages.FromServer.Auth.LOGIN_FAILURE:
 							gameState.handleLoginFailure();
 							break;
-						case Messages.FromServer.ROOM:
+						}
+						break;
+					case Messages.FromServer.GAME:
+						byte gameMsgType = inputStream.readByte();
+						switch(gameMsgType) {
+						case Messages.FromServer.Game.ROOM:
 							gameState.handleRoomData(inputStream.readUTF(), inputStream);
 							break;
-						case Messages.FromServer.TEXT:
+						case Messages.FromServer.Game.TEXT:
 							final String input = inputStream.readUTF();
 							SwingUtilities.invokeLater(new Runnable() {
 								public void run() {
@@ -215,6 +224,7 @@ public class Client extends JFrame {
 								}
 							});
 							break;
+						}
 					}
 				}
 			} catch (Exception e) {

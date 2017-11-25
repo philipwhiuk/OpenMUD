@@ -1,6 +1,7 @@
 package com.whiuk.philip.openmud.server;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,10 +10,12 @@ import com.whiuk.philip.openmud.Messages;
 class Player {
 	private final Server server;
 	private final World world;
+	private final String username;
 
-	Player(Server server, World world) {
+	Player(Server server, World world, String username) {
 		this.server = server;
 		this.world = world;
+		this.username = username;
 	}
 
 	ConnectedClient client;
@@ -27,24 +30,24 @@ class Player {
 		currentItems.putAll(this.world.startItems);
 		experience.putAll(this.world.startExperience);
 		equipment.putAll(this.world.startEquipment);
-	}
-
-	void play() throws IOException {
+		
 		playerCharacter = new Character();
 		playerCharacter.health = 10;
 		playerCharacter.alive = true;
 		changeLocation(currentLocation);
-		do {
-			performTurn();			
-		} while(playerCharacter.alive && this.server.running);
-		if (!playerCharacter.alive) {
-			sendOutput("Game Over");
-			this.server.disconnect(client);
-		}
 	}
 
-	private void performTurn() {
-		String nextCommand = readCommand();
+	boolean play(ObjectInputStream inputStream) throws IOException {
+		performTurn(inputStream);
+		if (!playerCharacter.alive) {
+			sendOutput("Game Over");
+			return false;
+		}
+		return true;
+	}
+
+	private void performTurn(ObjectInputStream inputStream) {
+		String nextCommand = readCommand(inputStream);
 		processCommand(nextCommand);
 	}
 	
@@ -288,7 +291,7 @@ class Player {
 	private ConversationState performDialog(ConversationState state) {
 		sendOutput("What do you want to say?");
 		printConversationOptions(state.currentNode.options);
-		String optionName = readCommand().toUpperCase();
+		String optionName = readCommand(client.inputStream).toUpperCase();
 		if (state.currentNode.options.containsKey(optionName)) {
 			ConversationOption option = state.currentNode.options.get(optionName);
 			sayOption(option);
@@ -499,9 +502,9 @@ class Player {
 		}
 	}
 	
-	private String readCommand() {
+	private String readCommand(ObjectInputStream inputStream) {
 		try {
-			client.inputStream.readByte(); //TEXT
+			inputStream.readByte(); //TEXT
 			String line = client.inputStream.readUTF();
 			sendOutput("> "+ line);
 			return line.trim();
@@ -512,7 +515,8 @@ class Player {
 	
 	private void sendOutput(String output) {
 		try {
-			client.outputStream.writeByte(Messages.FromServer.TEXT);
+			client.outputStream.writeByte(Messages.FromServer.GAME);
+			client.outputStream.writeByte(Messages.FromServer.Game.TEXT);
 			client.outputStream.writeUTF(output);
 			client.outputStream.flush();
 		} catch (IOException e) {

@@ -13,6 +13,8 @@ import java.util.Random;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 
+import com.whiuk.philip.openmud.Messages;
+
 public class Server {
 	public static final Logger logger = Logger.getLogger(Server.class);
 	
@@ -42,15 +44,60 @@ public class Server {
 						new ObjectOutputStream(client.socket.getOutputStream());
 				client.inputStream = 
 						new ObjectInputStream(client.socket.getInputStream());
-				client.player = new Player(Server.this, world);
-				client.player.client = client;
-				client.player.setup();
-				client.player.play();
+				
+				while (!client.isAuthenticated()) {
+					processUnauthenticatedClientCommands();
+				}
+				while (client.isAuthenticated()) {
+					boolean shouldDisconnect = processAuthenticatedClientComand();
+					if (shouldDisconnect) {
+						disconnect(client);
+						return;
+					}
+				}
 			} catch (IOException e) {
 				e.printStackTrace();
 				disconnect(client);
 				return;
 			}
+		}
+		
+		private void processUnauthenticatedClientCommands() throws IOException {
+			byte messageType = client.inputStream.readByte();
+			switch(messageType) {
+				case Messages.ToServer.AUTH:
+					processAuthClientCommand();
+				default:
+					logger.info("Message type: "+messageType+" received while not authenticated");
+			}
+		}
+		
+		private void processAuthClientCommand() throws IOException {
+			byte authMessageType = client.inputStream.readByte();
+			switch(authMessageType) {
+			case Messages.ToServer.Auth.LOGIN:
+				processLogin(client.inputStream.readUTF(), client.inputStream.readUTF());
+				break;
+			}
+		}
+		
+		private void processLogin(String username, String password) {
+			client.player = new Player(Server.this, world, username);
+			client.player.client = client;
+			client.player.setup();
+			players.put(username, client.player);
+		}
+		
+		private boolean processAuthenticatedClientComand() throws IOException {
+			byte messageType = client.inputStream.readByte();
+			switch(messageType) {
+			case Messages.ToServer.AUTH:
+				processAuthClientCommand();
+				return false;
+			case Messages.ToServer.GAME:
+				return client.player.play(client.inputStream);
+			}
+			return true;
 		}
 	}
 	

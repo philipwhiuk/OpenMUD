@@ -11,4 +11,8 @@ class ConnectedClient {
 	ObjectOutputStream outputStream;
 	ObjectInputStream inputStream;
 	Player player;
+	
+	public boolean isAuthenticated() {
+		return player != null;
+	}
 }
