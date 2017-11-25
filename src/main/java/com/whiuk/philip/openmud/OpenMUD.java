@@ -13,14 +13,16 @@ public class OpenMUD {
 				}
 			}
 		}).start();
-		new Thread(new Runnable() {
-			public void run() {
-				try {
-					new Client("127.0.0.1", 1750);
-				} catch (IOException e) {
-					e.printStackTrace();
+		for (int i = 0; i < 3; i++) {
+			new Thread(new Runnable() {
+				public void run() {
+					try {
+						new Client("127.0.0.1", 1750);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
 				}
-			}
-		}).start();
+			}).start();
+		}
 	}	
 }
