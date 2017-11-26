@@ -2,8 +2,8 @@ package com.whiuk.philip.openmud.server;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
@@ -14,6 +14,9 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 
 import com.whiuk.philip.openmud.Messages;
+import com.whiuk.philip.openmud.messages.Messages.AuthMessageToServer;
+import com.whiuk.philip.openmud.messages.Messages.AuthMessageToServer.LoginMessage;
+import com.whiuk.philip.openmud.messages.Messages.MessageToServer;
 
 public class Server {
 	public static final Logger logger = Logger.getLogger(Server.class);
@@ -41,9 +44,9 @@ public class Server {
 		public void run() {
 			try {
 				client.outputStream =
-						new ObjectOutputStream(client.socket.getOutputStream());
+						new BufferedOutputStream(client.socket.getOutputStream());
 				client.inputStream = 
-						new ObjectInputStream(client.socket.getInputStream());
+						new BufferedInputStream(client.socket.getInputStream());
 				
 				while (!client.isAuthenticated()) {
 					processUnauthenticatedClientCommands();
@@ -63,41 +66,42 @@ public class Server {
 		}
 		
 		private void processUnauthenticatedClientCommands() throws IOException {
-			byte messageType = client.inputStream.readByte();
-			switch(messageType) {
-				case Messages.ToServer.AUTH:
-					processAuthClientCommand();
+			MessageToServer message = MessageToServer.parseDelimitedFrom(client.inputStream);
+			switch(message.getMessageType()) {
+				case AUTH:
+					processAuthClientCommand(message.getAuth());
+					break;
 				default:
-					logger.info("Message type: "+messageType+" received while not authenticated");
+					logger.info("Message type: "+message.getMessageType()+" received while not authenticated");
 			}
 		}
 		
-		private void processAuthClientCommand() throws IOException {
-			byte authMessageType = client.inputStream.readByte();
-			switch(authMessageType) {
-			case Messages.ToServer.Auth.LOGIN:
-				processLogin(client.inputStream.readUTF(), client.inputStream.readUTF());
+		private void processAuthClientCommand(AuthMessageToServer authMessage) {
+			switch(authMessage.getMessageType()) {
+			case LOGIN:
+				processLogin(authMessage.getLogin());
 				break;
 			}
 		}
 		
-		private void processLogin(String username, String password) {
-			client.player = new Player(Server.this, world, username);
+		private void processLogin(LoginMessage loginMessage) {
+			client.player = new Player(Server.this, world, loginMessage.getUsername());
 			client.player.client = client;
 			client.player.setup();
-			players.put(username, client.player);
+			players.put(loginMessage.getUsername(), client.player);
 		}
 		
 		private boolean processAuthenticatedClientComand() throws IOException {
-			byte messageType = client.inputStream.readByte();
-			switch(messageType) {
-			case Messages.ToServer.AUTH:
-				processAuthClientCommand();
+			MessageToServer message = MessageToServer.parseDelimitedFrom(client.inputStream);
+			switch(message.getMessageType()) {
+			case AUTH:
+				processAuthClientCommand(message.getAuth());
 				return false;
-			case Messages.ToServer.GAME:
-				return client.player.play(client.inputStream);
+			case GAME:
+				return client.player.play(message.getGame());
+			default:
+				throw new UnsupportedOperationException();
 			}
-			return true;
 		}
 	}
 	

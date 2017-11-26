@@ -7,9 +7,9 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -22,7 +22,14 @@ import javax.swing.SwingUtilities;
 
 import org.apache.log4j.Logger;
 
-import com.whiuk.philip.openmud.Messages;
+import com.whiuk.philip.openmud.messages.Messages;
+import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.RoomMessage;
+import com.whiuk.philip.openmud.messages.Messages.GameMessageToServer;
+import com.whiuk.philip.openmud.messages.Messages.GameMessageToServer.GameMessageType;
+import com.whiuk.philip.openmud.messages.Messages.GameMessageToServer.TextMessageToServer;
+import com.whiuk.philip.openmud.messages.Messages.MessageToClient;
+import com.whiuk.philip.openmud.messages.Messages.MessageToServer;
+import com.whiuk.philip.openmud.messages.Messages.MessageType;
 
 @SuppressWarnings("serial")
 public class Client extends JFrame {
@@ -36,8 +43,8 @@ public class Client extends JFrame {
 	private final int port;
 
 	private Socket socket;
-	private ObjectInputStream inputStream;
-	private ObjectOutputStream outputStream;
+	private BufferedInputStream inputStream;
+	private BufferedOutputStream outputStream;
 	private volatile boolean running = true;
 	private JTextField input;
 	private JScrollPane textAreaScroll;
@@ -69,19 +76,9 @@ public class Client extends JFrame {
 			loggedIn = false;
 			loginFailed = true;
 		}
-		public void handleRoomData(String roomName, ObjectInputStream objectInputStream) throws IOException {
+		public void handleRoomData(RoomMessage room2) {
 			MapArea room = new MapArea();
-			room.name = roomName;
-			room.tiles = new Tile[10][10];
-			for (int x = 0; x < room.tiles.length; x++) {
-				for (int y = 0; y < room.tiles[x].length; y++) {
-					room.tiles[x][y] = new Tile();
-					room.tiles[x][y].color = new Color(
-							objectInputStream.readByte(), 
-							objectInputStream.readByte(), 
-							objectInputStream.readByte());
-				}
-			}
+			room.name = room2.getName();
 			this.room = room;
 			gameCanvas.repaint();
 		}
@@ -130,9 +127,12 @@ public class Client extends JFrame {
 				final String message = source.getText();
 				source.setText("");
 				try {
-					outputStream.writeByte(Messages.ToServer.GAME);
-					outputStream.writeByte(Messages.ToServer.Game.TEXT);
-					outputStream.writeUTF(message);
+					MessageToServer.newBuilder()
+							.setMessageType(MessageType.GAME)
+							.setGame(GameMessageToServer.newBuilder()
+									.setGameMessageType(GameMessageType.TEXT)
+									.setText(TextMessageToServer.newBuilder().setText(message)))
+							.build().writeDelimitedTo(outputStream);
 					outputStream.flush();
 				} catch (IOException ioex) {
 					ioex.printStackTrace();
@@ -159,8 +159,8 @@ public class Client extends JFrame {
 			}
 
 			try {
-				outputStream = new ObjectOutputStream(socket.getOutputStream());
-				inputStream = new ObjectInputStream(socket.getInputStream());
+				outputStream = new BufferedOutputStream(socket.getOutputStream());
+				inputStream = new BufferedInputStream(socket.getInputStream());
 			} catch (IOException e) {
 				logger.error("IO error while creating object streams", e);
 			}
@@ -197,34 +197,37 @@ public class Client extends JFrame {
 		public void run() {
 			try {
 				while (running) {
-					final byte msgType = inputStream.readByte();
-					switch (msgType) {
-					case Messages.FromServer.AUTH:
-						byte authMsgType = inputStream.readByte();
-						switch(authMsgType) {
-						case Messages.FromServer.Auth.LOGIN_SUCCESS: 
-							gameState.handleLoggedIn(inputStream.readUTF());
+					MessageToClient message = Messages.MessageToClient.parseDelimitedFrom(inputStream);
+					switch (message.getMessageType()) {
+					case AUTH:
+						switch(message.getAuth().getMessageType()) {
+						case LOGIN_SUCCESS: 
+							gameState.handleLoggedIn(message.getAuth().getLoginSuccess().getUsername());
 							break;
-						case Messages.FromServer.Auth.LOGIN_FAILURE:
+						case LOGIN_FAILURE:
 							gameState.handleLoginFailure();
 							break;
 						}
 						break;
-					case Messages.FromServer.GAME:
-						byte gameMsgType = inputStream.readByte();
-						switch(gameMsgType) {
-						case Messages.FromServer.Game.ROOM:
-							gameState.handleRoomData(inputStream.readUTF(), inputStream);
+					case GAME:
+						switch(message.getGame().getGameMessageType()) {
+						case ROOM:
+							gameState.handleRoomData(message.getGame().getRoom());
 							break;
-						case Messages.FromServer.Game.TEXT:
-							final String input = inputStream.readUTF();
+						case TEXT:
+							String input = message.getGame().getText().getText();
 							SwingUtilities.invokeLater(new Runnable() {
 								public void run() {
 									textArea.append(input + System.lineSeparator());
 								}
 							});
 							break;
+						default:
+							throw new UnsupportedOperationException(message.getGame().getGameMessageType().toString());
 						}
+						break;
+					default:
+						throw new UnsupportedOperationException(message.getMessageType().toString());
 					}
 				}
 			} catch (Exception e) {

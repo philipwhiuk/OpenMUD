@@ -1,0 +1,117 @@
+syntax = "proto2";
+
+package tutorial;
+
+option java_package = "com.whiuk.philip.openmud.messages";
+option java_outer_classname = "Messages";
+
+enum MessageType {
+	AUTH = 1;
+	GAME = 2;
+	CHAT = 3;
+}
+
+message MessageToServer {
+	required MessageType messageType = 1;
+	optional AuthMessageToServer auth = 2;
+	optional GameMessageToServer game = 3;
+}
+
+message AuthMessageToServer {
+	required AuthMessageToClientType messageType = 1;
+	optional LoginMessage login = 2;
+	
+	enum AuthMessageToClientType {
+		LOGIN = 1;
+	}
+	
+	message LoginMessage {
+		required string username = 1;
+		required string password = 2;
+	}
+}
+
+message GameMessageToServer {
+	required GameMessageType gameMessageType = 1;
+	optional MoveMessageToServer move = 2;
+	optional TextMessageToServer text = 3;
+
+	enum GameMessageType {
+		MOVE = 1;
+		TEXT = 2;
+	}
+	
+	enum Direction {
+		NORTH = 1;
+		EAST = 2;
+		SOUTH = 3;
+		WEST = 4;
+	}
+	
+	message MoveMessageToServer {
+		required Direction direction = 1;
+	}
+	
+	message TextMessageToServer {
+		required string text = 1;
+	}
+}
+	
+message MessageToClient {
+	required MessageType messageType = 1;
+	optional AuthMessageToClient auth = 2;
+	optional GameMessageToClient game = 3;
+	optional ChatMessageToClient chat = 4;
+}
+
+message AuthMessageToClient {
+	required AuthMessageToClientType messageType = 1;
+	optional LoginSuccessMessage loginSuccess = 2;
+	
+	enum AuthMessageToClientType {
+		LOGIN_SUCCESS = 1;
+		LOGIN_FAILURE = 2;
+	}
+	
+	message LoginSuccessMessage {
+		required string username = 1;
+	}
+}
+
+
+message GameMessageToClient {
+	required GameMessageType gameMessageType = 1;
+	optional RoomMessage room = 2;
+	optional MoveMessageToClient move = 3;
+	optional TextMessageToClient text = 4;
+
+	enum GameMessageType {
+		ROOM = 1;
+		MOVE = 2;
+		TEXT = 3;
+	}
+	
+	message RoomMessage {
+		required string name = 1;
+	}
+	
+	message MoveMessageToClient {
+		required int32 x = 1;
+		required int32 y = 2;
+	}
+	
+	message TextMessageToClient {
+		required string text = 1;
+	}
+}
+
+message ChatMessageToClient {
+	enum ChatMessageType {
+		LOCAL = 1;
+	}
+
+	required ChatMessageType chatMessageType = 1;
+	optional string message = 2;
+	
+
+}

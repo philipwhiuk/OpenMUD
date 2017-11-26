@@ -6,6 +6,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.whiuk.philip.openmud.Messages;
+import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient;
+import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.GameMessageType;
+import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.TextMessageToClient;
+import com.whiuk.philip.openmud.messages.Messages.GameMessageToServer;
+import com.whiuk.philip.openmud.messages.Messages.MessageToClient;
+import com.whiuk.philip.openmud.messages.Messages.MessageType;
 
 class Player {
 	private final Server server;
@@ -37,8 +43,8 @@ class Player {
 		changeLocation(currentLocation);
 	}
 
-	boolean play(ObjectInputStream inputStream) throws IOException {
-		performTurn(inputStream);
+	boolean play(GameMessageToServer gameMessage) throws IOException {
+		performTurn(gameMessage);
 		if (!playerCharacter.alive) {
 			sendOutput("Game Over");
 			return false;
@@ -46,9 +52,8 @@ class Player {
 		return true;
 	}
 
-	private void performTurn(ObjectInputStream inputStream) {
-		String nextCommand = readCommand(inputStream);
-		processCommand(nextCommand);
+	private void performTurn(GameMessageToServer gameMessage) {
+		processCommand(gameMessage.getText().getText());
 	}
 	
 	private void processCommand(final String fullCommand) {
@@ -291,12 +296,15 @@ class Player {
 	private ConversationState performDialog(ConversationState state) {
 		sendOutput("What do you want to say?");
 		printConversationOptions(state.currentNode.options);
+		state.stateType = ConversationStateType.FINISHED;
+		/**
 		String optionName = readCommand(client.inputStream).toUpperCase();
 		if (state.currentNode.options.containsKey(optionName)) {
 			ConversationOption option = state.currentNode.options.get(optionName);
 			sayOption(option);
 			state = processResponse(state, option);
 		}
+		*/
 		return state;
 	}
 	
@@ -502,22 +510,17 @@ class Player {
 		}
 	}
 	
-	private String readCommand(ObjectInputStream inputStream) {
-		try {
-			inputStream.readByte(); //TEXT
-			String line = client.inputStream.readUTF();
-			sendOutput("> "+ line);
-			return line.trim();
-		} catch (IOException e) {
-			throw new RuntimeException("Client stream disconnection", e);
-		}
-	}
-	
 	private void sendOutput(String output) {
 		try {
-			client.outputStream.writeByte(Messages.FromServer.GAME);
-			client.outputStream.writeByte(Messages.FromServer.Game.TEXT);
-			client.outputStream.writeUTF(output);
+			MessageToClient.newBuilder()
+				.setMessageType(MessageType.GAME)
+				.setGame(
+					GameMessageToClient.newBuilder()
+						.setGameMessageType(GameMessageType.TEXT)
+						.setText(
+								TextMessageToClient.newBuilder()
+									.setText(output)))
+				.build().writeDelimitedTo(client.outputStream);
 			client.outputStream.flush();
 		} catch (IOException e) {
 			throw new RuntimeException("Client stream disconnection", e);
