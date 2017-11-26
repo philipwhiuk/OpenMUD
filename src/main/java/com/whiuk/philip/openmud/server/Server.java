@@ -13,10 +13,14 @@ import java.util.Random;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 
-import com.whiuk.philip.openmud.Messages;
+import com.whiuk.philip.openmud.messages.Messages.AuthMessageToClient;
+import com.whiuk.philip.openmud.messages.Messages.AuthMessageToClient.AuthMessageToClientType;
+import com.whiuk.philip.openmud.messages.Messages.AuthMessageToClient.LoginSuccessMessage;
 import com.whiuk.philip.openmud.messages.Messages.AuthMessageToServer;
+import com.whiuk.philip.openmud.messages.Messages.MessageToClient;
 import com.whiuk.philip.openmud.messages.Messages.AuthMessageToServer.LoginMessage;
 import com.whiuk.philip.openmud.messages.Messages.MessageToServer;
+import com.whiuk.philip.openmud.messages.Messages.MessageType;
 
 public class Server {
 	public static final Logger logger = Logger.getLogger(Server.class);
@@ -51,9 +55,10 @@ public class Server {
 				while (!client.isAuthenticated()) {
 					processUnauthenticatedClientCommands();
 				}
+				client.player.setup();
 				while (client.isAuthenticated()) {
-					boolean shouldDisconnect = processAuthenticatedClientComand();
-					if (shouldDisconnect) {
+					boolean continuePlaying = processAuthenticatedClientComand();
+					if (!continuePlaying) {
 						disconnect(client);
 						return;
 					}
@@ -76,7 +81,7 @@ public class Server {
 			}
 		}
 		
-		private void processAuthClientCommand(AuthMessageToServer authMessage) {
+		private void processAuthClientCommand(AuthMessageToServer authMessage) throws IOException {
 			switch(authMessage.getMessageType()) {
 			case LOGIN:
 				processLogin(authMessage.getLogin());
@@ -84,19 +89,30 @@ public class Server {
 			}
 		}
 		
-		private void processLogin(LoginMessage loginMessage) {
+		private void processLogin(LoginMessage loginMessage) throws IOException {
+			logger.info("Processing login");
 			client.player = new Player(Server.this, world, loginMessage.getUsername());
 			client.player.client = client;
-			client.player.setup();
 			players.put(loginMessage.getUsername(), client.player);
+			logger.info("Sending login success");
+			MessageToClient.newBuilder()
+				.setMessageType(MessageType.AUTH)
+				.setAuth(AuthMessageToClient.newBuilder()
+						.setMessageType(AuthMessageToClientType.LOGIN_SUCCESS)
+						.setLoginSuccess(LoginSuccessMessage.newBuilder()
+								.setUsername(loginMessage.getUsername()))).build().writeDelimitedTo(client.outputStream);
 		}
 		
+		/**
+		 * @return continue playing?
+		 * @throws IOException
+		 */
 		private boolean processAuthenticatedClientComand() throws IOException {
 			MessageToServer message = MessageToServer.parseDelimitedFrom(client.inputStream);
 			switch(message.getMessageType()) {
 			case AUTH:
 				processAuthClientCommand(message.getAuth());
-				return false;
+				return true;
 			case GAME:
 				return client.player.play(message.getGame());
 			default:
@@ -153,7 +169,7 @@ public class Server {
 	}
 	
 	void disconnect(ConnectedClient client) {
-		logger.info("Disconnecting client ["+client.id+"]");
+		logger.info("Disconnecting client ["+client.id+"]", new Exception());
 		connectedClients.remove(client.id);
 		closeQuietly(client.outputStream);
 		closeQuietly(client.inputStream);

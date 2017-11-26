@@ -1,11 +1,9 @@
 package com.whiuk.philip.openmud.server;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.whiuk.philip.openmud.Messages;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.GameMessageType;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.TextMessageToClient;
@@ -43,6 +41,11 @@ class Player {
 		changeLocation(currentLocation);
 	}
 
+	/**
+	 * @param gameMessage
+	 * @return continue playing?
+	 * @throws IOException
+	 */
 	boolean play(GameMessageToServer gameMessage) throws IOException {
 		performTurn(gameMessage);
 		if (!playerCharacter.alive) {
@@ -53,6 +56,7 @@ class Player {
 	}
 
 	private void performTurn(GameMessageToServer gameMessage) {
+		sendOutput("> "+gameMessage.getText().getText());
 		processCommand(gameMessage.getText().getText());
 	}
 	

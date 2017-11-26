@@ -18,10 +18,10 @@ message MessageToServer {
 }
 
 message AuthMessageToServer {
-	required AuthMessageToClientType messageType = 1;
+	required AuthMessageToServerType messageType = 1;
 	optional LoginMessage login = 2;
 	
-	enum AuthMessageToClientType {
+	enum AuthMessageToServerType {
 		LOGIN = 1;
 	}
 	
