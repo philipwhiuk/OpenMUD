@@ -81,18 +81,33 @@ message AuthMessageToClient {
 
 message GameMessageToClient {
 	required GameMessageType gameMessageType = 1;
-	optional RoomMessage room = 2;
+	optional MapAreaMessage mapArea = 2;
 	optional MoveMessageToClient move = 3;
 	optional TextMessageToClient text = 4;
 
 	enum GameMessageType {
-		ROOM = 1;
+		MAP_AREA = 1;
 		MOVE = 2;
 		TEXT = 3;
 	}
 	
-	message RoomMessage {
+	message MapAreaMessage {
 		required string name = 1;
+		repeated Tile tiles = 2;
+	}
+	
+	message Tile {
+		required TileType type = 1;
+	}
+	
+	enum TileType {
+		ROCK = 1;
+		FLOOR = 2;
+		GRASS = 3;
+		GROUND = 4;
+		TREE = 5;
+		WATER = 6;
+		PATH = 7;
 	}
 	
 	message MoveMessageToClient {

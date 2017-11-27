@@ -79,8 +79,31 @@
 	</items>
 	<locations>
 		<location id="OPENSPACE">
+			<name>Flat Land</name>
 			<description>You are in a wide open space.</description>
 			<shortDescription>a wide open space</shortDescription>
+			<tiles>
+				<tileRow>3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3</tileRow>
+				<tileRow>4,4,4,4,4,4,4,4,4,4,7,4,4,4,4,4,4,4,4,4</tileRow>
+				<tileRow>4,4,4,4,4,4,4,4,4,4,7,4,4,4,4,4,4,4,4,4</tileRow>
+				<tileRow>4,4,4,4,4,4,4,4,4,4,7,4,4,4,4,4,4,4,4,4</tileRow>
+				<tileRow>4,4,4,4,4,4,4,4,4,4,7,4,4,4,4,4,4,4,4,4</tileRow>
+				<tileRow>4,4,4,4,4,4,4,4,4,4,7,4,4,4,4,4,4,4,4,4</tileRow>
+				<tileRow>4,4,4,4,4,4,4,4,4,4,7,4,4,4,4,4,4,4,4,4</tileRow>
+				<tileRow>4,4,4,4,4,1,1,4,4,4,7,4,4,4,4,4,4,4,4,4</tileRow>
+				<tileRow>4,4,4,4,4,1,7,7,7,7,7,7,7,7,7,7,7,7,4,4</tileRow>
+				<tileRow>4,4,4,4,4,1,1,4,4,4,7,4,4,4,4,4,4,7,7,7</tileRow>
+				<tileRow>4,4,4,4,4,4,4,4,4,4,7,4,4,4,4,4,4,4,4,4</tileRow>
+				<tileRow>4,4,4,4,4,4,4,4,4,4,7,4,4,4,4,4,4,4,4,4</tileRow>
+				<tileRow>4,4,4,4,4,4,4,4,4,4,7,4,4,4,4,4,4,4,4,4</tileRow>
+				<tileRow>4,4,4,4,4,4,4,4,4,4,7,4,4,4,4,4,4,4,4,4</tileRow>
+				<tileRow>4,4,4,4,4,4,4,4,4,4,7,4,4,4,4,4,4,4,4,4</tileRow>
+				<tileRow>4,4,4,4,4,4,4,4,4,4,7,4,4,4,4,4,4,4,4,4</tileRow>
+				<tileRow>4,4,4,4,4,4,4,4,4,4,7,4,4,4,4,4,4,4,4,4</tileRow>
+				<tileRow>4,4,4,4,4,4,4,4,4,4,7,4,4,4,4,4,4,4,4,4</tileRow>
+				<tileRow>4,4,4,4,4,4,4,4,4,4,7,4,4,4,4,4,4,4,4,4</tileRow>
+				<tileRow>4,4,4,4,4,4,4,4,4,4,7,4,4,4,4,4,4,4,4,4</tileRow>
+			</tiles>
 		</location>
 		<location id="FOREST">
 			<description>You are in a forest.</description>

@@ -2,11 +2,15 @@ package com.whiuk.philip.openmud.server;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
+
+import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.Tile;
+import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.TileType;
 
 class XMLWorldFactory {
 
@@ -141,7 +145,21 @@ class XMLWorldFactory {
 
 	private void populateLocations(Element root, World world) {
 		for (Element locationXml : root.getChild("locations").getChildren("location")) {
-			Location location = new Location();
+			MapArea location = new MapArea();
+			if (locationXml.getChild("tiles") != null) {
+				location.tiles = new Tile[locationXml.getChild("tiles").getChildren("tileRow").size()][];
+				int y = 0;
+				for (Element tileRowXml: locationXml.getChild("tiles").getChildren("tileRow")) {
+					String[] tiles = tileRowXml.getText().split(",");
+					location.tiles[y] = new Tile[tiles.length];
+					for (int x = 0; x < tiles.length; x++) {
+						location.tiles[y][x] = Tile.newBuilder()
+								.setType(TileType.forNumber(Integer.parseInt(tiles[x]))).build();
+					}
+					y++;
+				}
+			}
+			location.name = locationXml.getChildText("name");
 			location.description = locationXml.getChildText("description");
 			location.shortDescription = locationXml.getChildText("shortDescription");
 			if (locationXml.getChild("structures") != null) {

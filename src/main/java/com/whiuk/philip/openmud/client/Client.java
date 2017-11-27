@@ -13,6 +13,7 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -29,7 +30,7 @@ import org.apache.log4j.Logger;
 
 import com.whiuk.philip.openmud.messages.Messages;
 import com.whiuk.philip.openmud.messages.Messages.AuthMessageToServer;
-import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.RoomMessage;
+import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.MapAreaMessage;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToServer;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToServer.GameMessageType;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToServer.TextMessageToServer;
@@ -38,6 +39,8 @@ import com.whiuk.philip.openmud.messages.Messages.MessageToServer;
 import com.whiuk.philip.openmud.messages.Messages.MessageType;
 import com.whiuk.philip.openmud.messages.Messages.AuthMessageToServer.AuthMessageToServerType;
 import com.whiuk.philip.openmud.messages.Messages.AuthMessageToServer.LoginMessage;
+
+import static com.whiuk.philip.openmud.Constants.MAP_AREA_SIZE;
 
 @SuppressWarnings("serial")
 public class Client extends JFrame {
@@ -68,7 +71,6 @@ public class Client extends JFrame {
 	private BufferedInputStream inputStream;
 	private BufferedOutputStream outputStream;
 	private volatile boolean running = true;
-
 	
 	private class MapArea {
 		private String name;
@@ -76,7 +78,20 @@ public class Client extends JFrame {
 	}
 	
 	private class Tile {
-		Color color;		
+		Color color;	
+		
+		public Tile(com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.Tile tile) {
+			switch(tile.getType()) {
+			case FLOOR: this.color = Color.BLACK; break;
+			case PATH: this.color = Color.GRAY; break;
+			case GRASS: this.color = new Color(0, 64, 0); break;
+			case GROUND: this.color = new Color(139, 69, 19); break;
+			case ROCK: this.color = Color.DARK_GRAY; break;
+			case TREE: this.color = new Color(0, 128, 0); break;
+			case WATER: this.color = Color.BLUE; break;
+			default: this.color = Color.PINK; break;	
+			}
+		}	
 	}
 	
 	class GameState {
@@ -84,7 +99,7 @@ public class Client extends JFrame {
 		boolean loggedIn;
 		boolean loginFailed;
 		String username;
-		MapArea room;
+		MapArea mapArea;
 		
 		public void setLoading() {
 			Client.this.setLoadingView();
@@ -101,18 +116,65 @@ public class Client extends JFrame {
 			loggedIn = false;
 			loginFailed = true;
 		}
-		public void handleRoomData(RoomMessage room2) {
-			MapArea room = new MapArea();
-			room.name = room2.getName();
-			this.room = room;
+		public void handleMapAreaData(MapAreaMessage mapAreaMessage) {
+			MapArea mapArea = new MapArea();
+			mapArea.name = mapAreaMessage.getName();
+			mapArea.tiles = buildTiles(mapAreaMessage.getTilesList());
+			this.mapArea = mapArea;
 			gameCanvas.repaint();
+		}
+
+		private Tile[][] buildTiles(
+				List<com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.Tile> tilesList) {
+			Tile[][] tiles = new Tile[MAP_AREA_SIZE][];
+			int i = 0;
+			for (int y = 0; y < MAP_AREA_SIZE; y++) {
+				tiles[y] = new Tile[MAP_AREA_SIZE];
+				for (int x = 0; x < MAP_AREA_SIZE; x++) {
+					logger.info("Tile("+y+","+x+") - "+tilesList.get(i).getType());
+					tiles[y][x] = new Tile(tilesList.get(i));
+					i++;
+				}
+			}
+			return tiles;
 		}
 	}
 	
+	static final int PADDING = 5;
+	
 	class GameCanvas extends Canvas  {
 		public void paint(Graphics g) {
+			int width = this.getWidth();
+			int height = this.getHeight();
 			g.setColor(Color.BLACK);
-			g.fillRect(0, 0, this.getWidth(), this.getHeight());
+			g.fillRect(0, 0, width, height);
+			
+			int gameAreaSize = 0;
+			//Determine Game Area Size
+			if (width > height) {
+				gameAreaSize = height-(PADDING*2);
+				g.translate((width-height)/2, 0);
+			} else {
+				gameAreaSize = width-(PADDING*2);
+				g.translate(0, (height-width)/2);
+			}
+			gameAreaSize = (gameAreaSize/MAP_AREA_SIZE)*MAP_AREA_SIZE;
+			
+			//Render Border
+			g.setColor(Color.WHITE);
+			g.drawRect(PADDING-1, PADDING-1, gameAreaSize+1, gameAreaSize+1);
+			g.translate(PADDING, PADDING);
+			
+			//Draw Tiles
+			if (gameState.mapArea != null) {
+				for (int y = 0; y < gameState.mapArea.tiles.length; y++) {
+					for (int x = 0; x < gameState.mapArea.tiles[y].length; x++) {
+						g.setColor(gameState.mapArea.tiles[y][x].color);
+						g.fillRect(x*(gameAreaSize/MAP_AREA_SIZE), y*(gameAreaSize/MAP_AREA_SIZE), 
+								(gameAreaSize/MAP_AREA_SIZE), (gameAreaSize/MAP_AREA_SIZE));
+					}
+				}
+			}
 		}
 	}
 
@@ -307,11 +369,10 @@ public class Client extends JFrame {
 					case GAME:
 						logger.info("Game message type: "+message.getGame().getGameMessageType().toString());
 						switch(message.getGame().getGameMessageType()) {
-						case ROOM:
-							gameState.handleRoomData(message.getGame().getRoom());
+						case MAP_AREA:
+							gameState.handleMapAreaData(message.getGame().getMapArea());
 							break;
 						case TEXT:
-							logger.info("Text: "+message.getGame().getText().getText());
 							String input = message.getGame().getText().getText();
 							SwingUtilities.invokeLater(new Runnable() {
 								public void run() {

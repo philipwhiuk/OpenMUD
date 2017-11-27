@@ -6,6 +6,7 @@ import java.util.Map;
 
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.GameMessageType;
+import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.MapAreaMessage;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.TextMessageToClient;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToServer;
 import com.whiuk.philip.openmud.messages.Messages.MessageToClient;
@@ -23,7 +24,7 @@ class Player {
 	}
 
 	ConnectedClient client;
-	private Location currentLocation;
+	private MapArea currentLocation;
 	private Map<String, Item> currentItems = new HashMap<>();
 	private Map<String, Integer> experience = new HashMap<>();
 	private Map<Slot, Item> equipment = new HashMap<>();
@@ -358,12 +359,30 @@ class Player {
 			sendOutput("Unable to move in that direction");
 	}
 	
-	private void changeLocation(Location newLocation) {
+	private void changeLocation(MapArea newLocation) {
 		currentLocation = newLocation;
+		sendMapArea(currentLocation);
 		printDescription(currentLocation);
 		printStuff(currentLocation);
 		printDirections(currentLocation);
 		
+	}
+
+	private void sendMapArea(MapArea currentLocation2) {
+		try {
+			MessageToClient.newBuilder()
+			.setMessageType(MessageType.GAME)
+			.setGame(
+				GameMessageToClient.newBuilder()
+					.setGameMessageType(GameMessageType.MAP_AREA)
+					.setMapArea(MapAreaMessage.newBuilder()
+							.setName(currentLocation.name)
+							.addAllTiles(currentLocation.getTiles())))
+			.build().writeDelimitedTo(client.outputStream);
+			client.outputStream.flush();
+		} catch (IOException e) {
+			throw new RuntimeException("Client stream disconnection", e);
+		}
 	}
 
 	private void take(String itemName) {
@@ -401,7 +420,7 @@ class Player {
 		}
 	}
 	
-	private void removeItem(Location currentLocation2, Drop drop, String itemName) {
+	private void removeItem(MapArea currentLocation2, Drop drop, String itemName) {
 		if (drop.count == 1) {
 			currentLocation.drops.remove(itemName);;
 		} else {
@@ -473,11 +492,11 @@ class Player {
 		experience.put(skillId, experience.get(skillId) + amount);
 	}
 	
-	private void printDescription(Location location) {
+	private void printDescription(MapArea location) {
 		sendOutput(location.description);
 	}
 	
-	private void printStuff(Location location) {
+	private void printStuff(MapArea location) {
 		if (location.structures.size() > 0) {
 			sendOutput("Theres's the following structures:");
 			for (Map.Entry<String, Item> structure: location.structures.entrySet()) {
@@ -504,12 +523,12 @@ class Player {
 		}
 	}
 	
-	private void printDirections(Location location) {
+	private void printDirections(MapArea location) {
 		if (location.connections.size() == 0) {
 			sendOutput("You can't move in any direction from here");
 		}
 		
-		for (Map.Entry<Direction, Location> connection: location.connections.entrySet()) {
+		for (Map.Entry<Direction, MapArea> connection: location.connections.entrySet()) {
 			sendOutput("To the "+connection.getKey()+" is "+connection.getValue().shortDescription+". ");			
 		}
 	}
