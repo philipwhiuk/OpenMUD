@@ -28,8 +28,6 @@ import com.whiuk.philip.openmud.messages.Messages.MessageType;
 public class Server {
 	public static final Logger logger = Logger.getLogger(Server.class);
 	
-	public static final int MAX_DAMAGE = 6;
-	
 	private ServerSocket serverSocket;
 	private Map<Integer, ConnectedClient> connectedClients = new HashMap<>();
 	private World world;

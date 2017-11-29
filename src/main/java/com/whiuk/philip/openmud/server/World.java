@@ -3,6 +3,8 @@ package com.whiuk.philip.openmud.server;
 import java.util.Map;
 
 class World {
+	public static final int MAX_DAMAGE = 6;
+	
 	Map<String, MapArea> locations;
 	Map<String, Item> items;
 	Map<String, ItemAction> actions;
