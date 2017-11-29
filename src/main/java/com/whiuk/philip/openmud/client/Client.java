@@ -295,7 +295,7 @@ public class Client extends JFrame {
 							.build().writeDelimitedTo(outputStream);
 					outputStream.flush();
 				} catch (IOException ioex) {
-					ioex.printStackTrace();
+					logger.warn("Error writing auth message", ioex);
 				}
 			}
 		});
