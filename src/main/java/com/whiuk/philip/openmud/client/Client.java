@@ -271,15 +271,14 @@ public class Client extends JFrame {
 				final String message = source.getText();
 				source.setText("");
 				try {
-					MessageToServer.newBuilder()
+					sendMessageToServer(MessageToServer.newBuilder()
 							.setMessageType(MessageType.GAME)
 							.setGame(GameMessageToServer.newBuilder()
 									.setGameMessageType(GameMessageType.TEXT)
 									.setText(TextMessageToServer.newBuilder().setText(message)))
-							.build().writeDelimitedTo(outputStream);
-					outputStream.flush();
+							.build());
 				} catch (IOException ioex) {
-					ioex.printStackTrace();
+					logger.warn("Error sending Game message to server", ioex);
 				}
 			}
 		});
