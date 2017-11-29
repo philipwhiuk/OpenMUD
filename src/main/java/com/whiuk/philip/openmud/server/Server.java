@@ -9,6 +9,10 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
@@ -32,8 +36,11 @@ public class Server {
 	private World world;
 	
 	boolean running = true;
+	boolean listening;
 	
 	private Map<String, Player> players = new HashMap<String, Player>();
+	private ScheduledExecutorService gameExecutor = Executors.newSingleThreadScheduledExecutor();
+	private ClientAcceptorThread clientAcceptor;
 	
 	Random random = new Random();
 	
@@ -55,14 +62,18 @@ public class Server {
 				while (!client.isAuthenticated()) {
 					processUnauthenticatedClientCommands();
 				}
+				logger.info("Setting up player");
 				client.player.setup();
+				client.player.sendRefresh();
 				while (client.isAuthenticated()) {
+					logger.info("Processing command");
 					boolean continuePlaying = processAuthenticatedClientComand();
 					if (!continuePlaying) {
 						disconnect(client);
 						return;
 					}
 				}
+				logger.info("Finished");
 			} catch (IOException e) {
 				e.printStackTrace();
 				disconnect(client);
@@ -114,7 +125,8 @@ public class Server {
 				processAuthClientCommand(message.getAuth());
 				return true;
 			case GAME:
-				return client.player.play(message.getGame());
+				logger.error("Unhandled Game command");
+				return true;
 			default:
 				throw new UnsupportedOperationException();
 			}
@@ -130,17 +142,34 @@ public class Server {
 		return value;
 	}
 	
+	class ClientAcceptorThread extends Thread {
+		public void run() {
+			try {
+				logger.info("Listening for clients");
+				while (listening) {
+					acceptClient();
+				}
+			} catch (IOException e) {
+				listening = false;
+			}
+		}
+	}
+	
 	public Server(int port) throws Exception {
 		BasicConfigurator.configure();
 		logger.info("Starting server");		
 		buildWorld();
-		createNetworkSocket(port);
-		
-		boolean listening = true;
-		logger.info("Listening for clients");
-		while (listening) {
-			acceptClient();
-		}
+		gameExecutor.scheduleAtFixedRate(new Runnable() {
+			@Override
+			public void run() {
+				world.tick();
+			}
+			
+		}, 0, 60, TimeUnit.MILLISECONDS);
+		createNetworkSocket(port);		
+		listening = true;
+		clientAcceptor = new ClientAcceptorThread();
+		clientAcceptor.start();
 	}
 	
 	private void buildWorld() throws Exception {

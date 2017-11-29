@@ -3,6 +3,6 @@ package com.whiuk.philip.openmud.server;
 import java.util.ArrayList;
 import java.util.List;
 
-class Action {
+class ItemAction {
 	List<Effect> effects = new ArrayList<>();
 }

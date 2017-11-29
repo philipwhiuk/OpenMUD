@@ -2,7 +2,6 @@ package com.whiuk.philip.openmud.server;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.jdom2.Element;
@@ -58,7 +57,7 @@ class XMLWorldFactory {
 
 	private void populateCharacters(Element root, World world) {
 		for (Element characterXml : root.getChild("characters").getChildren("character")) {
-			Character character = new Character();
+			NonPlayerCharacter character = new NonPlayerCharacter();
 			character.shortName = characterXml.getChildText("shortName");
 			character.shortDescription = characterXml.getChildText("shortDescription");
 			character.description = characterXml.getChildText("description");
@@ -67,8 +66,7 @@ class XMLWorldFactory {
 			character.startsTalking = Boolean.parseBoolean(characterXml.getChildText("startsTalking"));
 			character.openingRemark = characterXml.getChildText("openingRemark");
 			world.characters.put(character.shortName, character);
-			world.locations.get(characterXml.getChildText("startingLocation")).characters.put(character.shortName,
-					character);
+			world.locations.get(characterXml.getChildText("startingLocation")).characters.add(character);
 		}
 	}
 
@@ -113,7 +111,7 @@ class XMLWorldFactory {
 
 	private void populateActions(Element root, World world) {
 		for (Element actionXml : root.getChild("actions").getChildren("action")) {
-			Action action = new Action();
+			ItemAction action = new ItemAction();
 			for (Element effectXml : actionXml.getChildren("effect")) {
 				Effect effect = new Effect();
 				effect.type = EffectType.valueOf(effectXml.getAttributeValue("type"));
@@ -165,7 +163,7 @@ class XMLWorldFactory {
 			if (locationXml.getChild("structures") != null) {
 				for (Element structureXml : locationXml.getChild("structures").getChildren("structure")) {
 					Item structure = new Item(world.items.get(structureXml.getAttributeValue("item")));
-					location.structures.put(structure.shortName, structure);
+					location.structures.add(structure);
 				}
 			}
 			if (locationXml.getChild("drops") != null) {
@@ -173,7 +171,7 @@ class XMLWorldFactory {
 					Drop drop = new Drop();
 					drop.count = Integer.parseInt(dropXml.getAttributeValue("count"));
 					drop.item = new Item(world.items.get(dropXml.getAttributeValue("item")));
-					location.drops.put(drop.item.shortName, drop);
+					location.drops.add(drop);
 				}
 			}
 			world.locations.put(locationXml.getAttributeValue("id"), location);

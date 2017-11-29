@@ -30,6 +30,7 @@ import org.apache.log4j.Logger;
 
 import com.whiuk.philip.openmud.messages.Messages;
 import com.whiuk.philip.openmud.messages.Messages.AuthMessageToServer;
+import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.LocationMessageToClient;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.MapAreaMessage;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToServer;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToServer.GameMessageType;
@@ -100,6 +101,7 @@ public class Client extends JFrame {
 		boolean loginFailed;
 		String username;
 		MapArea mapArea;
+		LocationMessageToClient location;
 		
 		public void setLoading() {
 			Client.this.setLoadingView();
@@ -138,6 +140,10 @@ public class Client extends JFrame {
 			}
 			return tiles;
 		}
+
+		public void handleLocationUpdate(LocationMessageToClient location) {
+			this.location = location;
+		}
 	}
 	
 	static final int PADDING = 5;
@@ -174,6 +180,14 @@ public class Client extends JFrame {
 								(gameAreaSize/MAP_AREA_SIZE), (gameAreaSize/MAP_AREA_SIZE));
 					}
 				}
+			}
+			
+			//Draw Player
+			if (gameState.location != null) {
+				g.setColor(Color.WHITE);
+				g.drawOval(gameState.location.getX()*(gameAreaSize/MAP_AREA_SIZE), 
+						gameState.location.getY()*(gameAreaSize/MAP_AREA_SIZE),
+						(gameAreaSize/MAP_AREA_SIZE), (gameAreaSize/MAP_AREA_SIZE));
 			}
 		}
 	}
@@ -298,8 +312,6 @@ public class Client extends JFrame {
 		loginPanel.add(loginFormPanel, BorderLayout.CENTER);
 	}
 	
-
-	
 	private void setRunning(boolean isRunning) {
 		running = false;
 	}
@@ -354,6 +366,7 @@ public class Client extends JFrame {
 				while (running) {
 					logger.info("Running");
 					MessageToClient message = Messages.MessageToClient.parseDelimitedFrom(inputStream);
+					logger.info("Handling message");
 					logger.info("Message type: "+message.getMessageType().toString());
 					switch (message.getMessageType()) {
 					case AUTH:
@@ -369,9 +382,12 @@ public class Client extends JFrame {
 					case GAME:
 						logger.info("Game message type: "+message.getGame().getGameMessageType().toString());
 						switch(message.getGame().getGameMessageType()) {
+						case REFRESH:
 						case MAP_AREA:
 							gameState.handleMapAreaData(message.getGame().getMapArea());
 							break;
+						case LOCATION:
+							gameState.handleLocationUpdate(message.getGame().getLocation());
 						case TEXT:
 							String input = message.getGame().getText().getText();
 							SwingUtilities.invokeLater(new Runnable() {

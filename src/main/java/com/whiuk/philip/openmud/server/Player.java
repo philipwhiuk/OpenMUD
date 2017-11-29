@@ -12,55 +12,49 @@ import com.whiuk.philip.openmud.messages.Messages.GameMessageToServer;
 import com.whiuk.philip.openmud.messages.Messages.MessageToClient;
 import com.whiuk.philip.openmud.messages.Messages.MessageType;
 
+/**
+ * A Player is a logged in user on server.
+ */
 class Player {
 	private final Server server;
 	private final World world;
 	private final String username;
+	private PlayerCharacter playerCharacter;
+	ConnectedClient client;
 
 	Player(Server server, World world, String username) {
 		this.server = server;
 		this.world = world;
 		this.username = username;
 	}
-
-	ConnectedClient client;
-	private MapArea currentLocation;
-	private Map<String, Item> currentItems = new HashMap<>();
-	private Map<String, Integer> experience = new HashMap<>();
-	private Map<Slot, Item> equipment = new HashMap<>();
-	private Character playerCharacter;
 	
-	void setup() {
-		currentLocation = this.world.startLocation;
-		currentItems.putAll(this.world.startItems);
-		experience.putAll(this.world.startExperience);
-		equipment.putAll(this.world.startEquipment);
-		
-		playerCharacter = new Character();
-		playerCharacter.health = 10;
-		playerCharacter.alive = true;
-		changeLocation(currentLocation);
+	void setup() {		
+		playerCharacter = new PlayerCharacter("Bob", world);
 	}
 
-	/**
-	 * @param gameMessage
-	 * @return continue playing?
-	 * @throws IOException
+	/** 
+	 * Request and send the current status. Used on initial connection and can correct anomalies. 
+	 * @throws IOException 
 	 */
-	boolean play(GameMessageToServer gameMessage) throws IOException {
-		performTurn(gameMessage);
-		if (!playerCharacter.alive) {
-			sendOutput("Game Over");
-			return false;
-		}
-		return true;
+	public void sendRefresh() throws IOException {
+		MapArea mapArea = playerCharacter.getLocation();
+		
+		MessageToClient.newBuilder().setMessageType(MessageType.GAME).setGame(
+				GameMessageToClient.newBuilder().setGameMessageType(GameMessageType.REFRESH)
+				.setMapArea(MapAreaMessage.newBuilder()
+						.setName(mapArea.name)
+						.addAllTiles(mapArea.getTiles()))).build().writeDelimitedTo(client.outputStream);
+		client.outputStream.flush();
 	}
 
+	/*
 	private void performTurn(GameMessageToServer gameMessage) {
 		sendOutput("> "+gameMessage.getText().getText());
 		processCommand(gameMessage.getText().getText());
 	}
+	*/
 	
+	/*
 	private void processCommand(final String fullCommand) {
 		final String[] command = fullCommand.toUpperCase().split(" ", 2);
 		final String action = command[0];
@@ -85,6 +79,7 @@ class Player {
 		default: handleUnrecognisedCommand(fullCommand); break;
 		}
 	}
+
 	
 	private void handleQuitCommand() {
 		sendOutput("Thanks for playing");
@@ -151,7 +146,7 @@ class Player {
 	private void handleUnrecognisedCommand(String fullCommand) {
 		sendOutput("Unrecognised command: "+ fullCommand);
 	}
-	
+
 	private void printCommands() {
 		sendOutput("COMMANDS - List commands");
 		sendOutput("INVENTORY - Show current inventory");
@@ -183,6 +178,7 @@ class Player {
 			}
 		}
 	}
+
 
 	private void kill(String character) {
 		if (currentLocation.characters.containsKey(character)) {
@@ -230,13 +226,12 @@ class Player {
 			if (attacker == playerCharacter) {
 				sendOutput("Did "+damage+"HP of damage");
 				if (defender.health <= damage) {
-					sendOutput("Killed "+defender.shortName+".");
-					defender.alive = false;
-					currentLocation.characters.remove(defender.shortName);
+					sendOutput("Killed "+defender.getName()+".");
+					currentLocation.characters.remove(defender.getName());
 					return true;
 				} else {
 					defender.health -= damage;
-					sendOutput(defender.shortName+" has "+defender.health+"HP left.");
+					sendOutput(defender.getName()+" has "+defender.health+"HP left.");
 				}
 			} else if (defender == playerCharacter){
 				sendOutput(attacker.shortName+" did "+damage+"HP of damage");
@@ -302,14 +297,14 @@ class Player {
 		sendOutput("What do you want to say?");
 		printConversationOptions(state.currentNode.options);
 		state.stateType = ConversationStateType.FINISHED;
-		/**
+
 		String optionName = readCommand(client.inputStream).toUpperCase();
 		if (state.currentNode.options.containsKey(optionName)) {
 			ConversationOption option = state.currentNode.options.get(optionName);
 			sayOption(option);
 			state = processResponse(state, option);
 		}
-		*/
+		
 		return state;
 	}
 	
@@ -549,4 +544,5 @@ class Player {
 			throw new RuntimeException("Client stream disconnection", e);
 		}
 	}
+	*/
 }

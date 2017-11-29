@@ -17,6 +17,11 @@ class Item {
 	String shortDescription;
 	String description;
 	String creationMessage;
-	Map<String, Action> actions = new HashMap<>();
+	Map<String, ItemAction> actions = new HashMap<>();
 	boolean canTake;
+	
+	//TODO: tick
+	public void tick(MapArea mapArea) {
+		return;
+	}
 }

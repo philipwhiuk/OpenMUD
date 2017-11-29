@@ -82,13 +82,14 @@ message AuthMessageToClient {
 message GameMessageToClient {
 	required GameMessageType gameMessageType = 1;
 	optional MapAreaMessage mapArea = 2;
-	optional MoveMessageToClient move = 3;
+	optional LocationMessageToClient location = 3;
 	optional TextMessageToClient text = 4;
 
 	enum GameMessageType {
-		MAP_AREA = 1;
-		MOVE = 2;
-		TEXT = 3;
+		REFRESH = 1;
+		MAP_AREA = 2;
+		LOCATION = 3;
+		TEXT = 4;
 	}
 	
 	message MapAreaMessage {
@@ -110,7 +111,7 @@ message GameMessageToClient {
 		PATH = 7;
 	}
 	
-	message MoveMessageToClient {
+	message LocationMessageToClient {
 		required int32 x = 1;
 		required int32 y = 2;
 	}
