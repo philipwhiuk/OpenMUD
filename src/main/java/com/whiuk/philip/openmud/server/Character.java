@@ -2,7 +2,6 @@ package com.whiuk.philip.openmud.server;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 abstract class Character {	

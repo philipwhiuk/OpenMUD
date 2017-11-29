@@ -1,14 +1,10 @@
 package com.whiuk.philip.openmud.server;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.GameMessageType;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.MapAreaMessage;
-import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.TextMessageToClient;
-import com.whiuk.philip.openmud.messages.Messages.GameMessageToServer;
 import com.whiuk.philip.openmud.messages.Messages.MessageToClient;
 import com.whiuk.philip.openmud.messages.Messages.MessageType;
 
