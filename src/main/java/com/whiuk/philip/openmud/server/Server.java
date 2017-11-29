@@ -122,7 +122,7 @@ public class Server {
 				processAuthClientCommand(message.getAuth());
 				return true;
 			case GAME:
-				logger.error("Unhandled Game command");
+				client.player.processGameClientCommand(message.getGame());
 				return true;
 			default:
 				throw new UnsupportedOperationException();
@@ -162,7 +162,7 @@ public class Server {
 				world.tick();
 			}
 			
-		}, 0, 60, TimeUnit.MILLISECONDS);
+		}, 0, 600, TimeUnit.MILLISECONDS);
 		createNetworkSocket(port);		
 		listening = true;
 		clientAcceptor = new ClientAcceptorThread();

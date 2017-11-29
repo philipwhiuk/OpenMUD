@@ -3,10 +3,12 @@ package com.whiuk.philip.openmud.server;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.Tile;
+import com.whiuk.philip.openmud.messages.Messages.GameMessageToServer.Direction;
 
 class MapArea {
 	String name;
@@ -29,6 +31,14 @@ class MapArea {
 	
 	public void tick() {
 		drops.forEach(drops -> drops.tick(this));
+		Iterator<Drop> dropI = drops.iterator();
+		while(dropI.hasNext()) {
+			Drop drop = dropI.next();
+			if (drop.ticksLeft == 0) {
+				dropI.remove();
+			}
+		}
+		
 		structures.forEach(structure -> structure.tick(this));
 		// Shuffle necessary so that an early arriver doesn't consistently beat late-comers in getting executed first.
 		// TODO: Combat

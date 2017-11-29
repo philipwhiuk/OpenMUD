@@ -7,10 +7,6 @@ class Drop {
 	
 	
 	public void tick(MapArea m) {
-		if (ticksLeft <= 1) {
-			m.remove(this);
-		} else {
-			ticksLeft--;
-		}
+		ticksLeft--;
 	}
 }

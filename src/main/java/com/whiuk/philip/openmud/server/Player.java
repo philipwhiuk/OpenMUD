@@ -1,10 +1,14 @@
 package com.whiuk.philip.openmud.server;
 
 import java.io.IOException;
+
+import org.apache.log4j.Logger;
+
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.GameMessageType;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.LocationMessageToClient;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.MapAreaMessage;
+import com.whiuk.philip.openmud.messages.Messages.GameMessageToServer;
 import com.whiuk.philip.openmud.messages.Messages.MessageToClient;
 import com.whiuk.philip.openmud.messages.Messages.MessageType;
 
@@ -12,6 +16,8 @@ import com.whiuk.philip.openmud.messages.Messages.MessageType;
  * A Player is a logged in user on server.
  */
 class Player {
+	private static final Logger logger = Logger.getLogger(Logger.class);
+	
 	private final Server server;
 	private final World world;
 	private final String username;
@@ -25,17 +31,17 @@ class Player {
 	}
 	
 	void setup() {		
-		playerCharacter = new PlayerCharacter("Bob", world);
+		playerCharacter = new PlayerCharacter(this, "Bob", world);
 	}
 
 	/** 
 	 * Request and send the current status. Used on initial connection and can correct anomalies. 
 	 * @throws IOException 
 	 */
-	public void sendRefresh() throws IOException {
+	public void sendRefresh() {
 		MapArea mapArea = playerCharacter.getMapArea();
 		
-		MessageToClient.newBuilder().setMessageType(MessageType.GAME).setGame(
+		writeMessageToClient(MessageToClient.newBuilder().setMessageType(MessageType.GAME).setGame(
 				GameMessageToClient.newBuilder().setGameMessageType(GameMessageType.REFRESH)
 				.setMapArea(MapAreaMessage.newBuilder()
 						.setName(mapArea.name)
@@ -44,8 +50,27 @@ class Player {
 						.setX(playerCharacter.x)
 						.setY(playerCharacter.y)
 						)
-		).build().writeDelimitedTo(client.outputStream);
-		client.outputStream.flush();
+		).build());
+	}
+
+	public void processGameClientCommand(GameMessageToServer game) {
+		switch (game.getGameMessageType()) {
+			case MOVE:
+				playerCharacter.addLastAction(new MoveAction(game.getMove().getDirection()));
+		}
+	}
+
+	public void queueGameMessage(GameMessageToClient gameMessage) {
+		writeMessageToClient(MessageToClient.newBuilder().setMessageType(MessageType.GAME).setGame(gameMessage).build());
+	}
+	
+	private void writeMessageToClient(MessageToClient message) {
+		try {
+			message.writeDelimitedTo(client.outputStream);
+			client.outputStream.flush();
+		} catch (IOException e) {
+			logger.error("Failed to write message to client", e);
+		}
 	}
 
 	/*

@@ -10,6 +10,7 @@ import org.jdom2.input.SAXBuilder;
 
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.Tile;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.TileType;
+import com.whiuk.philip.openmud.messages.Messages.GameMessageToServer.Direction;
 
 class XMLWorldFactory {
 

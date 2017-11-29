@@ -8,6 +8,8 @@ import java.awt.Graphics;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -34,8 +36,11 @@ import com.whiuk.philip.openmud.messages.Messages.AuthMessageToServer;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.LocationMessageToClient;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.MapAreaMessage;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToServer;
+import com.whiuk.philip.openmud.messages.Messages.GameMessageToServer.Direction;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToServer.GameMessageType;
+import com.whiuk.philip.openmud.messages.Messages.GameMessageToServer.MoveMessageToServer;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToServer.TextMessageToServer;
+import com.whiuk.philip.openmud.messages.Messages.GameMessageToServerOrBuilder;
 import com.whiuk.philip.openmud.messages.Messages.MessageToClient;
 import com.whiuk.philip.openmud.messages.Messages.MessageToServer;
 import com.whiuk.philip.openmud.messages.Messages.MessageType;
@@ -145,6 +150,7 @@ public class Client extends JFrame {
 
 		public void handleLocationUpdate(LocationMessageToClient location) {
 			this.location = location;
+			gameCanvas.repaint();
 		}
 	}
 	
@@ -255,7 +261,42 @@ public class Client extends JFrame {
 	private void buildGameComponents() {
 		gameCanvas = new GameCanvas();
 		gameCanvas.setSize(1024, 520);
-		gameCanvas.addKeyListener(this);
+		gameCanvas.addKeyListener(new KeyListener() {
+			@Override
+			public void keyTyped(KeyEvent e) {
+				switch(e.getKeyChar()) {
+				case 'w':
+				case 'W': 
+					sendMoveMessage(Direction.NORTH);
+					break;
+				case 'a':
+				case 'A':
+					sendMoveMessage(Direction.WEST);
+					break;
+				case 's':
+				case 'S':
+					sendMoveMessage(Direction.SOUTH);
+					break;
+				case 'd':
+				case 'D':
+					sendMoveMessage(Direction.EAST);
+					break;
+				}
+			}
+
+			@Override
+			public void keyPressed(KeyEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void keyReleased(KeyEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
 
 		textOutputArea = new JTextArea();
 		textOutputArea.setEditable(false);
@@ -270,16 +311,7 @@ public class Client extends JFrame {
 				final JTextField source = ((JTextField) e.getSource());
 				final String message = source.getText();
 				source.setText("");
-				try {
-					sendMessageToServer(MessageToServer.newBuilder()
-							.setMessageType(MessageType.GAME)
-							.setGame(GameMessageToServer.newBuilder()
-									.setGameMessageType(GameMessageType.TEXT)
-									.setText(TextMessageToServer.newBuilder().setText(message)))
-							.build());
-				} catch (IOException ioex) {
-					logger.warn("Error sending Game message to server", ioex);
-				}
+				sendTextMessage(message);
 			}
 		});
 	}
@@ -324,6 +356,30 @@ public class Client extends JFrame {
 					.build());
 		} catch (IOException ioex) {
 			logger.warn("Error writing auth message", ioex);
+		}
+	}
+	
+	private void sendMoveMessage(Direction direction) {
+		sendGameMessageToServer(GameMessageToServer.newBuilder()
+			.setGameMessageType(GameMessageType.MOVE)
+			.setMove(MoveMessageToServer.newBuilder().setDirection(direction)));
+	}
+	
+	private void sendTextMessage(String message) {
+		sendGameMessageToServer(GameMessageToServer.newBuilder()
+				.setGameMessageType(GameMessageType.TEXT)
+				.setText(TextMessageToServer.newBuilder().setText(message)));
+	}
+	
+	private void sendGameMessageToServer(GameMessageToServer.Builder message) {
+		try {
+			logger.info("Sending message: "+message.getGameMessageType());
+			sendMessageToServer(MessageToServer.newBuilder()
+					.setMessageType(MessageType.GAME)
+					.setGame(message)
+					.build());
+		} catch (IOException ioex) {
+			logger.warn("Error sending Game message to server", ioex);
 		}
 	}
 	
@@ -440,4 +496,6 @@ public class Client extends JFrame {
 			throw new UnsupportedOperationException(gameMessage.getGameMessageType().toString());
 		}
 	}
+
+	
 }

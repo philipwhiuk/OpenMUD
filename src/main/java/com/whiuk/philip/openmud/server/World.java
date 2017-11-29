@@ -24,6 +24,10 @@ class World {
 	 * In each tick an action can occur. Ticks produce events that are dispatched to listeners.
 	 */
 	public void tick() {
-		locations.values().forEach(area -> area.tick());
+		try {
+			locations.values().forEach(area -> area.tick());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 }
