@@ -151,6 +151,7 @@ public class Client extends JFrame {
 	static final int PADDING = 5;
 	
 	class GameCanvas extends Canvas  {
+		
 		public void paint(Graphics g) {
 			int width = this.getWidth();
 			int height = this.getHeight();
@@ -187,10 +188,19 @@ public class Client extends JFrame {
 			//Draw Player
 			if (gameState.location != null) {
 				g.setColor(Color.WHITE);
-				g.drawOval(gameState.location.getX()*(gameAreaSize/MAP_AREA_SIZE), 
-						gameState.location.getY()*(gameAreaSize/MAP_AREA_SIZE),
-						(gameAreaSize/MAP_AREA_SIZE), (gameAreaSize/MAP_AREA_SIZE));
+				
+				int x = gameState.location.getX()*(gameAreaSize/MAP_AREA_SIZE) + (((gameAreaSize/MAP_AREA_SIZE)-15)/2);
+				int y = gameState.location.getY()*(gameAreaSize/MAP_AREA_SIZE) + (((gameAreaSize/MAP_AREA_SIZE)-15)/2);
+				
+				g.fillOval(x, 
+						y,
+						15, 15);
 			}
+		}
+
+		public void addKeyListener(Client client) {
+			// TODO Auto-generated method stub
+			
 		}
 	}
 
@@ -230,9 +240,9 @@ public class Client extends JFrame {
 	
 	private void setLoggedInView() {
 		this.getContentPane().removeAll();
-		this.getContentPane().add(gameCanvas, BorderLayout.NORTH);
-		this.getContentPane().add(textOutputAreaScroll, BorderLayout.CENTER);
-		this.getContentPane().add(textInput, BorderLayout.SOUTH);
+		this.getContentPane().add(gameCanvas, BorderLayout.CENTER);
+		//this.getContentPane().add(textOutputAreaScroll, BorderLayout.CENTER);
+		//this.getContentPane().add(textInput, BorderLayout.SOUTH);
 		this.revalidate();
 	}
 	
@@ -245,6 +255,7 @@ public class Client extends JFrame {
 	private void buildGameComponents() {
 		gameCanvas = new GameCanvas();
 		gameCanvas.setSize(1024, 520);
+		gameCanvas.addKeyListener(this);
 
 		textOutputArea = new JTextArea();
 		textOutputArea.setEditable(false);
@@ -414,9 +425,9 @@ public class Client extends JFrame {
 		case REFRESH:
 		case MAP_AREA:
 			gameState.handleMapAreaData(gameMessage.getMapArea());
-			break;
 		case LOCATION:
 			gameState.handleLocationUpdate(gameMessage.getLocation());
+			break;
 		case TEXT:
 			String input = gameMessage.getText().getText();
 			SwingUtilities.invokeLater(new Runnable() {
