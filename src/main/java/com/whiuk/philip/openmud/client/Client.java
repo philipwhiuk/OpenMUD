@@ -29,6 +29,7 @@ import javax.swing.SwingUtilities;
 import org.apache.log4j.Logger;
 
 import com.whiuk.philip.openmud.messages.Messages;
+import com.whiuk.philip.openmud.messages.Messages.AuthMessageToClient;
 import com.whiuk.philip.openmud.messages.Messages.AuthMessageToServer;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.LocationMessageToClient;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.MapAreaMessage;
@@ -40,6 +41,7 @@ import com.whiuk.philip.openmud.messages.Messages.MessageToServer;
 import com.whiuk.philip.openmud.messages.Messages.MessageType;
 import com.whiuk.philip.openmud.messages.Messages.AuthMessageToServer.AuthMessageToServerType;
 import com.whiuk.philip.openmud.messages.Messages.AuthMessageToServer.LoginMessage;
+import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient;
 
 import static com.whiuk.philip.openmud.Constants.MAP_AREA_SIZE;
 
@@ -286,17 +288,7 @@ public class Client extends JFrame {
 				String password = passwordInput.getText();
 				usernameInput.setText("");
 				passwordInput.setText("");
-				try {
-					MessageToServer.newBuilder()
-							.setMessageType(MessageType.AUTH)
-							.setAuth(AuthMessageToServer.newBuilder()
-									.setMessageType(AuthMessageToServerType.LOGIN)
-									.setLogin(LoginMessage.newBuilder().setUsername(username).setPassword(password)))
-							.build().writeDelimitedTo(outputStream);
-					outputStream.flush();
-				} catch (IOException ioex) {
-					logger.warn("Error writing auth message", ioex);
-				}
+				sendLoginMessage(username, password);
 			}
 		});
 		
@@ -310,6 +302,24 @@ public class Client extends JFrame {
 		loginFormPanel.setPreferredSize(new Dimension(500, 300));
 		loginPanel.setLayout(new BorderLayout());
 		loginPanel.add(loginFormPanel, BorderLayout.CENTER);
+	}
+	
+	private void sendLoginMessage(String username, String password) {
+		try {
+			sendMessageToServer(MessageToServer.newBuilder()
+					.setMessageType(MessageType.AUTH)
+					.setAuth(AuthMessageToServer.newBuilder()
+							.setMessageType(AuthMessageToServerType.LOGIN)
+							.setLogin(LoginMessage.newBuilder().setUsername(username).setPassword(password)))
+					.build());
+		} catch (IOException ioex) {
+			logger.warn("Error writing auth message", ioex);
+		}
+	}
+	
+	private void sendMessageToServer(MessageToServer message) throws IOException {
+		message.writeDelimitedTo(outputStream);
+		outputStream.flush();
 	}
 	
 	private void setRunning(boolean isRunning) {
@@ -364,51 +374,60 @@ public class Client extends JFrame {
 		public void run() {
 			try {
 				while (running) {
-					logger.info("Running");
-					MessageToClient message = Messages.MessageToClient.parseDelimitedFrom(inputStream);
-					logger.info("Handling message");
-					logger.info("Message type: "+message.getMessageType().toString());
-					switch (message.getMessageType()) {
-					case AUTH:
-						switch(message.getAuth().getMessageType()) {
-						case LOGIN_SUCCESS: 
-							gameState.handleLoggedIn(message.getAuth().getLoginSuccess().getUsername());							
-							break;
-						case LOGIN_FAILURE:
-							gameState.handleLoginFailure();
-							break;
-						}
-						break;
-					case GAME:
-						logger.info("Game message type: "+message.getGame().getGameMessageType().toString());
-						switch(message.getGame().getGameMessageType()) {
-						case REFRESH:
-						case MAP_AREA:
-							gameState.handleMapAreaData(message.getGame().getMapArea());
-							break;
-						case LOCATION:
-							gameState.handleLocationUpdate(message.getGame().getLocation());
-						case TEXT:
-							String input = message.getGame().getText().getText();
-							SwingUtilities.invokeLater(new Runnable() {
-								public void run() {
-									textOutputArea.append(input + System.lineSeparator());
-								}
-							});
-							break;
-						default:
-							logger.info("Unsupported message type: "+message.getGame().getGameMessageType().toString());
-							throw new UnsupportedOperationException(message.getGame().getGameMessageType().toString());
-						}
-						break;
-					default:
-						logger.info("Unsupported message type: "+message.getMessageType().toString());
-						throw new UnsupportedOperationException(message.getMessageType().toString());
-					}
+					processMessage(Messages.MessageToClient.parseDelimitedFrom(inputStream));
 				}
 			} catch (Exception e) {
+				logger.warn("Error while processing message, stopping", e);
 				setRunning(false);
 			}
+		}
+	}
+	
+	private void processMessage(MessageToClient message) {
+		switch (message.getMessageType()) {
+		case AUTH:
+			handleAuthMessage(message.getAuth());
+			break;
+		case GAME:
+			handleGameMessage(message.getGame());
+			break;
+		default:
+			logger.info("Unsupported message type: "+message.getMessageType().toString());
+			throw new UnsupportedOperationException(message.getMessageType().toString());
+		}
+	}
+	
+	private void handleAuthMessage(AuthMessageToClient authMessage) {
+		switch(authMessage.getMessageType()) {
+		case LOGIN_SUCCESS: 
+			gameState.handleLoggedIn(authMessage.getLoginSuccess().getUsername());							
+			break;
+		case LOGIN_FAILURE:
+			gameState.handleLoginFailure();
+			break;
+		}
+	}
+	
+	private void handleGameMessage(GameMessageToClient gameMessage) {
+		logger.info("Game message type: "+gameMessage.getGameMessageType().toString());
+		switch(gameMessage.getGameMessageType()) {
+		case REFRESH:
+		case MAP_AREA:
+			gameState.handleMapAreaData(gameMessage.getMapArea());
+			break;
+		case LOCATION:
+			gameState.handleLocationUpdate(gameMessage.getLocation());
+		case TEXT:
+			String input = gameMessage.getText().getText();
+			SwingUtilities.invokeLater(new Runnable() {
+				public void run() {
+					textOutputArea.append(input + System.lineSeparator());
+				}
+			});
+			break;
+		default:
+			logger.info("Unsupported message type: "+gameMessage.getGameMessageType().toString());
+			throw new UnsupportedOperationException(gameMessage.getGameMessageType().toString());
 		}
 	}
 }
