@@ -6,10 +6,17 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 
 abstract class Character {	
 	int health;
+	MapArea mapArea;
+	int x;
+	int y;
 		
 	abstract public void tick(MapArea mapArea);
 
 	abstract public String getName();
+
+	public MapArea getMapArea() {
+		return mapArea;
+	}
 }
 
 class NonPlayerCharacter extends Character {
@@ -37,7 +44,6 @@ class PlayerCharacter extends Character {
 	private Map<Slot, Item> equipment = new HashMap<>();
 	ConcurrentLinkedDeque<Action> actions;
 	private String name;
-	private MapArea location;
 
 	public PlayerCharacter(String name, World world) {
 		this.name = name;
@@ -45,8 +51,10 @@ class PlayerCharacter extends Character {
 		experience.putAll(world.startExperience);
 		equipment.putAll(world.startEquipment);
 		health = world.startHealth;
-		location = world.startLocation;
-		world.startLocation.characters.add(this);
+		mapArea = world.startMapArea;
+		x = world.startX;
+		y = world.startY;
+		world.startMapArea.characters.add(this);
 	}
 	
 	@Override
@@ -72,10 +80,6 @@ class PlayerCharacter extends Character {
 	@Override
 	public String getName() {
 		return name;
-	}
-
-	public MapArea getLocation() {
-		return location;
 	}
 }
 

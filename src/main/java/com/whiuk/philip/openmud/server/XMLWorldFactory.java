@@ -40,7 +40,7 @@ class XMLWorldFactory {
 	}
 
 	private void populateStartData(Element root, World world) {
-		world.startLocation = world.locations.get(root.getChildText("startingLocation"));
+		world.startMapArea = world.locations.get(root.getChildText("startingLocation"));
 		world.startItems = new HashMap<>();
 		world.startEquipment = new HashMap<>();
 

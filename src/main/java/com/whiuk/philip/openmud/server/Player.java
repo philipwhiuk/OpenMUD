@@ -1,9 +1,9 @@
 package com.whiuk.philip.openmud.server;
 
 import java.io.IOException;
-
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.GameMessageType;
+import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.LocationMessageToClient;
 import com.whiuk.philip.openmud.messages.Messages.GameMessageToClient.MapAreaMessage;
 import com.whiuk.philip.openmud.messages.Messages.MessageToClient;
 import com.whiuk.philip.openmud.messages.Messages.MessageType;
@@ -33,13 +33,18 @@ class Player {
 	 * @throws IOException 
 	 */
 	public void sendRefresh() throws IOException {
-		MapArea mapArea = playerCharacter.getLocation();
+		MapArea mapArea = playerCharacter.getMapArea();
 		
 		MessageToClient.newBuilder().setMessageType(MessageType.GAME).setGame(
 				GameMessageToClient.newBuilder().setGameMessageType(GameMessageType.REFRESH)
 				.setMapArea(MapAreaMessage.newBuilder()
 						.setName(mapArea.name)
-						.addAllTiles(mapArea.getTiles()))).build().writeDelimitedTo(client.outputStream);
+						.addAllTiles(mapArea.getTiles()))
+				.setLocation(LocationMessageToClient.newBuilder()
+						.setX(playerCharacter.x)
+						.setY(playerCharacter.y)
+						)
+		).build().writeDelimitedTo(client.outputStream);
 		client.outputStream.flush();
 	}
 

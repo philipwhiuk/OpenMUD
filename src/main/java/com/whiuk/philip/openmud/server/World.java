@@ -11,11 +11,13 @@ class World {
 	Map<String, Character> characters;
 	Map<String, ConversationNode> conversationNodes;
 	Map<String, Skill> skills;
-	MapArea startLocation;
+	MapArea startMapArea;
 	Map<String, Item> startItems;
 	Map<String, Integer> startExperience;
 	Map<Slot, Item> startEquipment;
-	int startHealth = 10; 
+	int startHealth = 10;
+	int startX; 
+	int startY;
 	
 	/**
 	 * A tick is an evolution of the game world. 
